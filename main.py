@@ -104,7 +104,6 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Botão Flutuante Perfeito e Visível */
         .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 50; transition: transform 0.2s; }
         .fab-btn:hover { transform: scale(1.08); }
 
@@ -525,7 +524,6 @@ def get_profile():
     profile_name = INSTANCE_NAME
     profile_pic = ""
     try:
-        # Busca dados da instância conectada na Evolution API
         url = f"{EVOLUTION_URL}/instance/fetchInstances"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
@@ -637,7 +635,7 @@ def get_messages(chat_id: str):
                     "time": time_str
                 })
     except Exception as e:
-        print(f2"Erro ao buscar mensagens: {e}")
+        print(f"Erro ao buscar mensagens: {e}")
 
     return {"messages": msgs}
 
