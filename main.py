@@ -85,7 +85,7 @@ HTML_TEMPLATE = """
         body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; transition: 0.3s; }
         .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; }
         @media(min-width: 500px) { .container { height: 92vh; border-radius: 12px; } }
-        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; }
+        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; z-index: 5; }
         .header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
         .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -93,9 +93,10 @@ HTML_TEMPLATE = """
         .status-info p { font-size: 11px; color: var(--text-secondary); }
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
         .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        
         .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .hidden { display: none !important; }
-        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); }
+        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); position: relative; padding-bottom: 70px; }
         .chat-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
         .chat-item:hover { background: var(--hover-item); }
         .chat-item-info { flex: 1; min-width: 0; }
@@ -103,9 +104,9 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Botão Flutuante Novo Chat */
-        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: none; z-index: 10; transition: transform 0.2s; }
-        .fab-btn:hover { transform: scale(1.05); }
+        /* Botão Flutuante Perfeito e Visível */
+        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 50; transition: transform 0.2s; }
+        .fab-btn:hover { transform: scale(1.08); }
 
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
         .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; position: relative; font-size: 14px; word-break: break-word; color: var(--text-primary); }
@@ -138,9 +139,9 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="header">
             <div class="header-left" id="header-left-content">
-                <div class="avatar">EB</div>
+                <div class="avatar" id="my-avatar">WA</div>
                 <div class="status-info">
-                    <h3>WhatsApp EnjoyWeb</h3>
+                    <h3 id="my-name">Carregando...</h3>
                     <p>Online (Evolution API)</p>
                 </div>
             </div>
@@ -275,12 +276,7 @@ HTML_TEMPLATE = """
 
             if (view === 'home') {
                 document.getElementById('home-view').classList.remove('hidden');
-                headerLeft.innerHTML = `
-                    <div class="avatar">EB</div>
-                    <div class="status-info">
-                        <h3>WhatsApp EnjoyWeb</h3>
-                        <p>Online (Evolution API)</p>
-                    </div>`;
+                loadProfileHeader();
                 headerBtns.innerHTML = `
                     <button class="status-tab-btn" onclick="navigateTo('status')">Status 📸</button>
                     <button class="status-tab-btn" onclick="navigateTo('schedule')">Agendar ⏰</button>
@@ -295,6 +291,21 @@ HTML_TEMPLATE = """
                 headerLeft.innerHTML = `<div class="status-info"><h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3></div>`;
                 headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
             }
+        }
+
+        function loadProfileHeader() {
+            fetch('/get_profile')
+                .then(res => res.json())
+                .then(data => {
+                    const avatarEl = document.getElementById('my-avatar');
+                    const nameEl = document.getElementById('my-name');
+                    nameEl.innerText = data.name || "WhatsApp EnjoyWeb";
+                    if (data.pic) {
+                        avatarEl.innerHTML = `<img src="${data.pic}" alt="Perfil">`;
+                    } else {
+                        avatarEl.innerText = (data.name || "WA").substring(0,2).toUpperCase();
+                    }
+                });
         }
 
         function refreshData() {
@@ -312,7 +323,7 @@ HTML_TEMPLATE = """
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (chats.length === 0) {
-                listContainer.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-secondary);"><p>Nenhuma conversa ativa recente.</p><p style="font-size:12px; margin-top:8px;">Clique no botão 💬 abaixo para iniciar um chat com seus contatos.</p></div>';
+                listContainer.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);"><p style="font-size:15px; margin-bottom:6px;">Nenhum chat recente.</p><p style="font-size:12px;">Clique no botão flutuante 💬 abaixo para buscar um contato e iniciar uma conversa.</p></div>';
                 return;
             }
             chats.forEach(chat => {
@@ -509,6 +520,29 @@ HTML_TEMPLATE = """
 def index():
     return HTML_TEMPLATE
 
+@app.get("/get_profile")
+def get_profile():
+    profile_name = INSTANCE_NAME
+    profile_pic = ""
+    try:
+        # Busca dados da instância conectada na Evolution API
+        url = f"{EVOLUTION_URL}/instance/fetchInstances"
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            instances = data if isinstance(data, list) else data.get("instances", [])
+            for inst in instances:
+                if inst.get("name") == INSTANCE_NAME or inst.get("instance", {}).get("instanceName") == INSTANCE_NAME:
+                    profile = inst.get("profileName") or inst.get("ownerJid", "").split("@")[0]
+                    if profile:
+                        profile_name = profile
+                    profile_pic = inst.get("profilePictureUrl") or inst.get("profilePicUrl", "")
+                    break
+    except Exception as e:
+        print(f"Erro ao buscar perfil: {e}")
+    
+    return {"name": profile_name, "pic": profile_pic}
+
 @app.get("/get_chats")
 def get_chats():
     chats_list = []
@@ -558,7 +592,6 @@ def get_contacts():
     except Exception as e:
         print(f"Erro ao buscar contatos: {e}")
 
-    # Fallback se a lista vier vazia
     if not contacts_list:
         contacts_list.append({
             "id": "5543999999999@s.whatsapp.net",
@@ -581,7 +614,6 @@ def get_messages(chat_id: str):
             if isinstance(data, list):
                 messages_data = data
             elif isinstance(data, dict):
-                # Tenta diferentes estruturas de retorno da Evolution API
                 messages_data = data.get("messages", {}).get("records", []) or data.get("messages", []) or data.get("records", [])
             
             for m in messages_data:
@@ -605,7 +637,7 @@ def get_messages(chat_id: str):
                     "time": time_str
                 })
     except Exception as e:
-        print(f"Erro ao buscar mensagens: {e}")
+        print(f2"Erro ao buscar mensagens: {e}")
 
     return {"messages": msgs}
 
