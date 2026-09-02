@@ -93,7 +93,7 @@ HTML_TEMPLATE = """
         .status-info p { font-size: 11px; color: var(--text-secondary); }
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
         .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
-        .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .hidden { display: none !important; }
         .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); }
         .chat-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
@@ -102,6 +102,11 @@ HTML_TEMPLATE = """
         .chat-item-info h4 { font-size: 14px; color: var(--text-primary); margin-bottom: 3px; display: flex; justify-content: space-between; }
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        /* Botão Flutuante Novo Chat */
+        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: none; z-index: 10; transition: transform 0.2s; }
+        .fab-btn:hover { transform: scale(1.05); }
+
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
         .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; position: relative; font-size: 14px; word-break: break-word; color: var(--text-primary); }
         .message.received { background: var(--received-bg); align-self: flex-start; border-top-left-radius: 0; border: 1px solid var(--border-color); }
@@ -148,6 +153,7 @@ HTML_TEMPLATE = """
 
         <div id="home-view" class="view-section">
             <div class="chat-list-body" id="chat-list"></div>
+            <button class="fab-btn" onclick="openContactsModal()" title="Nova Conversa">💬</button>
         </div>
 
         <div id="chat-view" class="view-section hidden">
@@ -189,6 +195,23 @@ HTML_TEMPLATE = """
                 </div>
                 <button class="download-btn" onclick="scheduleMessage()">Agendar Disparo</button>
                 <div id="sched-list" style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Contatos com Busca -->
+    <div class="modal" id="contacts-modal">
+        <div class="modal-content">
+            <h2>👥 Iniciar Conversa com Contato</h2>
+            <div class="form-group">
+                <label>Pesquisar nome ou número</label>
+                <input type="text" id="contact-search-input" placeholder="Digite para buscar..." oninput="filterContacts()">
+            </div>
+            <div id="contacts-modal-list" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
+                <p style="text-align: center; color: var(--text-secondary);">Carregando contatos...</p>
+            </div>
+            <div class="modal-buttons" style="margin-top: 14px;">
+                <button class="btn-cancel" onclick="closeContactsModal()">Fechar</button>
             </div>
         </div>
     </div>
@@ -238,6 +261,7 @@ HTML_TEMPLATE = """
         let currentChatId = null;
         let currentChatName = '';
         let currentView = 'home';
+        let allContactsCache = [];
 
         function navigateTo(view) {
             currentView = view;
@@ -288,7 +312,7 @@ HTML_TEMPLATE = """
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (chats.length === 0) {
-                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum chat encontrado.</div>';
+                listContainer.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-secondary);"><p>Nenhuma conversa ativa recente.</p><p style="font-size:12px; margin-top:8px;">Clique no botão 💬 abaixo para iniciar um chat com seus contatos.</p></div>';
                 return;
             }
             chats.forEach(chat => {
@@ -304,6 +328,55 @@ HTML_TEMPLATE = """
                     </div>
                 `;
                 listContainer.appendChild(div);
+            });
+        }
+
+        function openContactsModal() {
+            document.getElementById('contacts-modal').style.display = 'flex';
+            document.getElementById('contact-search-input').value = '';
+            fetch('/get_contacts')
+                .then(res => res.json())
+                .then(data => {
+                    allContactsCache = data.contacts || [];
+                    renderContactModalList(allContactsCache);
+                });
+        }
+
+        function closeContactsModal() {
+            document.getElementById('contacts-modal').style.display = 'none';
+        }
+
+        function filterContacts() {
+            const query = document.getElementById('contact-search-input').value.toLowerCase();
+            const filtered = allContactsCache.filter(c => 
+                c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query)
+            );
+            renderContactModalList(filtered);
+        }
+
+        function renderContactModalList(contacts) {
+            const container = document.getElementById('contacts-modal-list');
+            container.innerHTML = '';
+            if (contacts.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 10px;">Nenhum contato encontrado.</p>';
+                return;
+            }
+            contacts.forEach(c => {
+                let div = document.createElement('div');
+                div.className = 'chat-item';
+                div.onclick = () => {
+                    closeContactsModal();
+                    openChat(c.id, c.name, c.pic);
+                };
+                let avatarHTML = c.pic ? `<img src="${c.pic}" alt="Avatar">` : c.name.substring(0,2).toUpperCase();
+                div.innerHTML = `
+                    <div class="avatar">${avatarHTML}</div>
+                    <div class="chat-item-info">
+                        <h4>${c.name}</h4>
+                        <p>${c.id}</p>
+                    </div>
+                `;
+                container.appendChild(div);
             });
         }
 
@@ -328,7 +401,7 @@ HTML_TEMPLATE = """
                     const chatBody = document.getElementById('chat-body');
                     chatBody.innerHTML = '';
                     if(data.messages.length === 0) {
-                        chatBody.innerHTML = '<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">Nenhuma mensagem neste chat ainda.</div>';
+                        chatBody.innerHTML = '<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">Nenhuma mensagem neste chat ainda. Envie uma mensagem abaixo!</div>';
                         return;
                     }
                     data.messages.forEach(msg => {
@@ -440,7 +513,6 @@ def index():
 def get_chats():
     chats_list = []
     try:
-        # Tenta buscar chats na Evolution API
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
@@ -457,42 +529,44 @@ def get_chats():
                     "pic": pic,
                     "time": ""
                 })
-        
-        # Se não achou chats, tenta buscar contatos da instância
-        if not chats_list:
-            url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
-            res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
-            if res_c.status_code == 200:
-                c_data = res_c.json()
-                c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
-                for c in c_items:
-                    jid = c.get("id") or c.get("remoteJid", "")
-                    name = c.get("name") or c.get("pushName") or jid.split("@")[0]
-                    pic = c.get("profilePictureUrl", "")
-                    chats_list.append({
-                        "id": jid,
-                        "name": name,
-                        "last_msg": "Contato salvo",
-                        "pic": pic,
-                        "time": ""
-                    })
     except Exception as e:
-        print(f"Erro ao buscar chats/contatos: {e}")
-
-    # Fallback garantindo que a tela nunca fique vazia sem interação
-    if not chats_list:
-        chats_list.append({
-            "id": "5543999999999@s.whatsapp.net",
-            "name": "Exemplo Contato",
-            "last_msg": "Olá via Evolution API",
-            "pic": "",
-            "time": "Agora"
-        })
+        print(f"Erro ao buscar chats: {e}")
 
     return {
         "chats": chats_list,
         "theme": gb_settings["theme"]
     }
+
+@app.get("/get_contacts")
+def get_contacts():
+    contacts_list = []
+    try:
+        url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
+        res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
+        if res_c.status_code == 200:
+            c_data = res_c.json()
+            c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
+            for c in c_items:
+                jid = c.get("id") or c.get("remoteJid", "")
+                name = c.get("name") or c.get("pushName") or jid.split("@")[0]
+                pic = c.get("profilePictureUrl", "")
+                contacts_list.append({
+                    "id": jid,
+                    "name": name,
+                    "pic": pic
+                })
+    except Exception as e:
+        print(f"Erro ao buscar contatos: {e}")
+
+    # Fallback se a lista vier vazia
+    if not contacts_list:
+        contacts_list.append({
+            "id": "5543999999999@s.whatsapp.net",
+            "name": "Exemplo Contato",
+            "pic": ""
+        })
+
+    return {"contacts": contacts_list}
 
 @app.get("/get_messages")
 def get_messages(chat_id: str):
@@ -503,12 +577,28 @@ def get_messages(chat_id: str):
         response = requests.post(url, json=payload, headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
-            messages_data = data if isinstance(data, list) else data.get("messages", {}).get("records", [])
+            messages_data = []
+            if isinstance(data, list):
+                messages_data = data
+            elif isinstance(data, dict):
+                # Tenta diferentes estruturas de retorno da Evolution API
+                messages_data = data.get("messages", {}).get("records", []) or data.get("messages", []) or data.get("records", [])
+            
             for m in messages_data:
-                body = m.get("message", {}).get("conversation") or m.get("message", {}).get("extendedTextMessage", {}).get("text", "[Mídia]")
+                msg_obj = m.get("message", {})
+                body = (
+                    msg_obj.get("conversation") or 
+                    msg_obj.get("extendedTextMessage", {}).get("text") or 
+                    msg_obj.get("imageMessage", {}).get("caption") or 
+                    "[Mídia/Mensagem]"
+                )
                 from_me = m.get("key", {}).get("fromMe", False)
                 timestamp = m.get("messageTimestamp", 0)
-                time_str = datetime.fromtimestamp(timestamp).strftime("%H:%M") if timestamp else ""
+                try:
+                    time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
+                except:
+                    time_str = ""
+                
                 msgs.append({
                     "text": str(body),
                     "is_me": from_me,
@@ -516,9 +606,6 @@ def get_messages(chat_id: str):
                 })
     except Exception as e:
         print(f"Erro ao buscar mensagens: {e}")
-
-    if not msgs:
-        msgs.append({"text": "Conectado à Evolution API (EnjoyWeb). Envie uma mensagem para testar!", "is_me": False, "time": datetime.now().strftime("%H:%M")})
 
     return {"messages": msgs}
 
