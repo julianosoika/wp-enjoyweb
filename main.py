@@ -6,7 +6,6 @@ import httpx
 app = FastAPI()
 SENHA = "123456"
 
-# Armazenamento em memória simples para configurações e chat dinâmico
 CONFIG = {
     "openai_key": "",
     "ai_enabled": False,
@@ -85,7 +84,6 @@ def dashboard(request: Request):
         a.logout {{ color: #ef4444; text-decoration: none; font-size: 13px; font-weight: 600; padding: 6px 12px; background: rgba(239,68,68,0.1); border-radius: 6px; }}
         #backBtn {{ display: none; }}
 
-        /* Modal GB Settings */
         .modal {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999; justify-content: center; align-items: center; }}
         .modal-content {{ background: #1f2c34; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #2a3942; }}
         .modal-content h3 {{ color: #34d399; margin-bottom: 15px; }}
@@ -143,7 +141,6 @@ def dashboard(request: Request):
         </div>
     </div>
 
-    <!-- Modal de Configurações GB -->
     <div class="modal" id="settingsModal">
         <div class="modal-content">
             <h3>⚙️ Configurações GB & IA</h3>
@@ -221,7 +218,6 @@ def dashboard(request: Request):
 
             const container = document.getElementById('chatMessages');
             
-            // Adiciona mensagem do usuário
             const userDiv = document.createElement('div');
             userDiv.className = 'msg sent';
             userDiv.textContent = txt;
@@ -231,13 +227,12 @@ def dashboard(request: Request):
             container.scrollTop = container.scrollHeight;
             document.getElementById('lastMsgPreview').textContent = txt;
 
-            // Envia para o backend processar (IA ou eco simulado)
             try {{
                 const response = await fetch('/api/chat', {{
                     method: 'POST',
                     headers: {{ 'Content-Type': 'application/json' }},
                     body: JSON.stringify({{ message: txt }})
-                }};
+                }});
                 
                 const data = await response.json();
                 
@@ -276,7 +271,6 @@ async def chat_endpoint(request: Request):
     data = await request.json()
     user_msg = data.get("message", "")
 
-    # Se a IA estiver ativada e houver chave da OpenAI configurada
     if CONFIG["ai_enabled"] and CONFIG["openai_key"]:
         try:
             async with httpx.AsyncClient(timeout=30.0) as client:
@@ -301,7 +295,6 @@ async def chat_endpoint(request: Request):
         except Exception as e:
             return {"reply": f"[Erro de conexão com ChatGPT]: {str(e)}"}
     
-    # Comportamento padrão caso a IA não esteja ativa
     if CONFIG["ai_enabled"] and not CONFIG["openai_key"]:
         return {"reply": "A IA está ativada, mas você esqueceu de preencher a chave da API OpenAI em 'GB Mods' ⚙️!"}
     
