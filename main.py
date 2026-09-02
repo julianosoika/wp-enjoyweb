@@ -50,6 +50,10 @@ class ScheduleModel(BaseModel):
     text: str
     delay_seconds: int
 
+class MassModel(BaseModel):
+    numbers: list
+    text: str
+
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -614,10 +618,6 @@ HTML_TEMPLATE = """
 </html>
 """
 
-class MassModel(BaseModel):
-    numbers: list
-    text: str
-
 @app.get("/", response_class=HTMLResponse)
 def index():
     return HTML_TEMPLATE
@@ -627,22 +627,11 @@ def get_profile():
     name = INSTANCE_NAME
     pic = ""
     try:
-        url_inst = f"{EVOLUTION_URL}/instance/fetchInstances"
-        res_inst = requests.get(url_inst, headers=headers, timeout=5)
-        if res_inst.status_code == 200:
-            for inst in res_inst.json():
-                if inst.get("name") == INSTANCE_NAME:
-                    profile = inst.get("profile") or {}
-                    name = profile.get("name") or INSTANCE_NAME
-                    pic = profile.get("profilePictureUrl") or profile.get("pictureUrl", "")
-                    break
-        
-        if not pic:
-            url_pic = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
-            res_pic = requests.post(url_pic, json={"number": INSTANCE_NAME}, headers=headers, timeout=5)
-            if res_pic.status_code == 200:
-                data = res_pic.json()
-                pic = data.get("profilePictureUrl") or data.get("pictureUrl") or ""
+        url_pic = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
+        res_pic = requests.post(url_pic, json={"number": INSTANCE_NAME}, headers=headers, timeout=5)
+        if res_pic.status_code == 200:
+            data = res_pic.json()
+            pic = data.get("profilePictureUrl") or data.get("pictureUrl") or ""
     except Exception as e:
         print(f"Erro perfil: {e}")
     return {"name": name, "pic": pic}
@@ -651,7 +640,6 @@ def get_profile():
 def get_chats():
     chats_list = []
     try:
-        # Tenta a rota padrão GET ou POST dependendo da versão da Evolution API
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code != 200:
@@ -664,7 +652,16 @@ def get_chats():
                 jid = c.get("id") or c.get("remoteJid", "")
                 if not jid: continue
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
+                
                 pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
+                if not pic and "@s.whatsapp.net" in jid:
+                    try:
+                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=2)
+                        if p_res.status_code == 200:
+                            pic = p_res.json().get("profilePictureUrl") or p_res.json().get("pictureUrl", "")
+                    except:
+                        pass
+
                 last_message = c.get("lastMessage", {})
                 last_text = last_message.get("conversation") or last_message.get("text") or "Conversa ativa"
                 timestamp = last_message.get("messageTimestamp", 0)
@@ -689,7 +686,16 @@ def get_contacts():
             for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
-                pic = c.get("profilePictureUrl", "")
+                
+                pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
+                if not pic and "@s.whatsapp.net" in jid:
+                    try:
+                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=2)
+                        if p_res.status_code == 200:
+                            pic = p_res.json().get("profilePictureUrl") or p_res.json().get("pictureUrl", "")
+                    except:
+                        pass
+
                 contacts_list.append({"id": jid, "name": name, "pic": pic})
     except Exception as e:
         print(f"Erro contatos: {e}")
@@ -749,7 +755,7 @@ def mass_dispatch(data: MassModel):
     dict_data = data.dict() if hasattr(data, 'dict') else data.model_dump()
     try:
         for num in dict_data.get("numbers", []):
-            url = f"{EVNOWLEDGE_URL}/message/sendText/{INSTANCE_NAME}" # type: ignore
+            url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
             payload = {"number": num, "text": dict_data.get("text"), "delay": 1200}
             requests.post(url, json=payload, headers=headers, timeout=5)
         return {"status": "success"}
