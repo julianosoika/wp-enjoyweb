@@ -2,7 +2,6 @@ from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 app = FastAPI()
-
 SENHA = "123456"
 
 @app.get("/", response_class=HTMLResponse)
@@ -52,8 +51,8 @@ def dashboard(request: Request):
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v9</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <title>WhatsApp GB Custom v10</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400,500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { height: 100vh; overflow: hidden; background: #0b141a; color: #e9edef; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -78,9 +77,10 @@ def dashboard(request: Request):
         #backBtn { display: none; }
 
         @media (max-width: 768px) {
-            .chat-area { display: none !important; width: 100%; height: 100%; }
+            .app-container:not(.mobile-active) .chat-area { display: none !important; }
             .app-container.mobile-active .sidebar { display: none !important; }
-            .app-container.mobile-active .chat-area { display: flex !important; position: absolute; top: 0; left: 0; z-index: 99; }
+            .app-container.mobile-active .chat-area { display: flex !important; width: 100% !important; position: absolute; top: 0; left: 0; z-index: 99; height: 100%; }
+            .sidebar { width: 100% !important; }
             #backBtn { display: inline-block !important; }
         }
     </style>
@@ -90,7 +90,7 @@ def dashboard(request: Request):
         <div class="sidebar">
             <div class="sidebar-header">
                 <span>💬 WhatsApp GB</span>
-                <span class="gb-badge">PRO v9</span>
+                <span class="gb-badge">PRO v10</span>
             </div>
             <div class="contact-list">
                 <div class="contact" onclick="openChat()">
