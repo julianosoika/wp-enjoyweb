@@ -270,12 +270,11 @@ HTML_TEMPLATE = """
             document.getElementById('status-view').classList.add('hidden');
             document.getElementById('schedule-view').classList.add('hidden');
 
-            const headerLeft = document.getElementById('header-left-content');
             const headerBtns = document.getElementById('header-buttons');
 
             if (view === 'home') {
                 document.getElementById('home-view').classList.remove('hidden');
-                loadProfileHeader();
+                loadProfileHeader(); // Restaura o perfil correto no topo
                 headerBtns.innerHTML = `
                     <button class="status-tab-btn" onclick="navigateTo('status')">Status 📸</button>
                     <button class="status-tab-btn" onclick="navigateTo('schedule')">Agendar ⏰</button>
@@ -287,6 +286,9 @@ HTML_TEMPLATE = """
             } else if (view === 'status' || view === 'schedule') {
                 if (view === 'status') document.getElementById('status-view').classList.remove('hidden');
                 if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
+                
+                // Altera apenas o título informativo mantendo o container seguro
+                const headerLeft = document.getElementById('header-left-content');
                 headerLeft.innerHTML = `<div class="status-info"><h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3></div>`;
                 headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
             }
@@ -296,14 +298,16 @@ HTML_TEMPLATE = """
             fetch('/get_profile')
                 .then(res => res.json())
                 .then(data => {
-                    const avatarEl = document.getElementById('my-avatar');
-                    const nameEl = document.getElementById('my-name');
-                    nameEl.innerText = data.name || "WhatsApp EnjoyWeb";
-                    if (data.pic) {
-                        avatarEl.innerHTML = `<img src="${data.pic}" alt="Perfil">`;
-                    } else {
-                        avatarEl.innerText = (data.name || "WA").substring(0,2).toUpperCase();
-                    }
+                    const headerLeft = document.getElementById('header-left-content');
+                    let avatarHTML = data.pic ? `<img src="${data.pic}" alt="Perfil">` : (data.name || "WA").substring(0,2).toUpperCase();
+                    
+                    headerLeft.innerHTML = `
+                        <div class="avatar" id="my-avatar">${avatarHTML}</div>
+                        <div class="status-info">
+                            <h3 id="my-name">${data.name || "WhatsApp EnjoyWeb"}</h3>
+                            <p>Online (Evolution API)</p>
+                        </div>
+                    `;
                 });
         }
 
@@ -394,6 +398,8 @@ HTML_TEMPLATE = """
             currentChatId = id;
             currentChatName = name;
             let avatarHTML = pic ? `<img src="${pic}" alt="Avatar">` : name.substring(0,2).toUpperCase();
+            
+            // Exibe temporariamente os dados da pessoa no chat aberto
             document.getElementById('header-left-content').innerHTML = `
                 <div class="avatar">${avatarHTML}</div>
                 <div class="status-info">
