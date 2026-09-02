@@ -56,7 +56,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v16 - Evolution API</title>
+    <title>WhatsApp GB Custom v17 - Evolution API</title>
     <style>
         :root {
             --bg-color: #0b141a;
@@ -111,8 +111,9 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
+        /* Botões Flutuantes Alinhados */
         .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #111; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
-        .radio-fab-btn { position: absolute; bottom: 78px; right: 20px; background: #22c55e; color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
+        .radio-fab-btn { position: absolute; bottom: 76px; right: 20px; background: #22c55e; color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
         
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; word-break: break-word; color: var(--text-primary); }
@@ -123,7 +124,6 @@ HTML_TEMPLATE = """
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .download-btn { background: var(--accent-color); color: #111; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
         
-        /* Troca Fitas Retro (Cassete Player) */
         .radio-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 15px; background: radial-gradient(circle, #1a2228 0%, #0b141a 100%); }
         .cassette { width: 260px; height: 160px; background: linear-gradient(135deg, #2a2f35 0%, #15191d 100%); border: 3px solid var(--accent-color); border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: space-between; padding: 12px; position: relative; margin-bottom: 15px; }
         .cassette-label { background: #e2e8f0; color: #0f172a; font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; text-align: center; letter-spacing: 1px; }
@@ -651,11 +651,15 @@ def get_profile():
 def get_chats():
     chats_list = []
     try:
+        # Tenta a rota padrão GET ou POST dependendo da versão da Evolution API
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code != 200:
+            response = requests.post(url, json={}, headers=headers, timeout=5)
+            
         if response.status_code == 200:
             data = response.json()
-            items = data if isinstance(data, list) else (data.get("chats") or data.get("records") or [])
+            items = data if isinstance(data, list) else (data.get("chats") or data.get("records") or data.get("data") or [])
             for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
                 if not jid: continue
@@ -676,9 +680,12 @@ def get_contacts():
     try:
         url = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
         res = requests.post(url, json={}, headers=headers, timeout=5)
+        if res.status_code != 200:
+            res = requests.get(url, headers=headers, timeout=5)
+            
         if res.status_code == 200:
             data = res.json()
-            items = data if isinstance(data, list) else data.get("contacts", [])
+            items = data if isinstance(data, list) else (data.get("contacts") or data.get("records") or [])
             for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
@@ -742,7 +749,7 @@ def mass_dispatch(data: MassModel):
     dict_data = data.dict() if hasattr(data, 'dict') else data.model_dump()
     try:
         for num in dict_data.get("numbers", []):
-            url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
+            url = f"{EVNOWLEDGE_URL}/message/sendText/{INSTANCE_NAME}" # type: ignore
             payload = {"number": num, "text": dict_data.get("text"), "delay": 1200}
             requests.post(url, json=payload, headers=headers, timeout=5)
         return {"status": "success"}
