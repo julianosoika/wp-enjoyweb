@@ -710,6 +710,7 @@ def get_groups():
 @app.get("/get_messages")
 def get_messages(chat_id: str):
     msgs = []
+    seen_ids = set()
     try:
         url = f"{EVOLUTION_URL}/chat/findMessages/{INSTANCE_NAME}"
         payload = {"where": {"remoteJid": chat_id}}
@@ -730,6 +731,19 @@ def get_messages(chat_id: str):
                 for m in messages_data:
                     if not isinstance(m, dict):
                         continue
+                    
+                    # Filtro de segurança: Garante que a mensagem pertence realmente a este chat
+                    remote_jid = m.get("remoteJid") or m.get("key", {}).get("remoteJid", "")
+                    if remote_jid and remote_jid != chat_id:
+                        continue
+
+                    # Evita mensagens duplicadas na tela
+                    msg_id = m.get("id") or m.get("key", {}).get("id", "")
+                    if msg_id and msg_id in seen_ids:
+                        continue
+                    if msg_id:
+                        seen_ids.add(msg_id)
+
                     msg_obj = m.get("message") or {}
                     body = msg_obj.get("conversation") or msg_obj.get("extendedTextMessage", {}).get("text") or "[Mídia]"
                     key_obj = m.get("key") or {}
