@@ -113,6 +113,25 @@ HTML_TEMPLATE = """
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
         
+        /* Estilos do Player de Rádio Animado */
+        .radio-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 20px; background: radial-gradient(circle, #1a2a3a 0%, #0b141a 100%); }
+        .radio-disc { width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(45deg, #111, #333, #111); border: 4px solid var(--accent-color); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,168,132,0.4); margin-bottom: 20px; position: relative; }
+        .radio-disc.playing { animation: spin 4s linear infinite; }
+        .radio-disc::after { content: ''; width: 25px; height: 25px; background: var(--accent-color); border-radius: 50%; border: 3px solid #111; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .equalizer { display: flex; align-items: flex-end; gap: 4px; height: 30px; margin-bottom: 20px; }
+        .bar { width: 6px; background: var(--accent-color); border-radius: 3px; height: 5px; transition: height 0.2s; }
+        .playing-bars .bar { animation: bounce 0.8s ease-in-out infinite alternate; }
+        .playing-bars .bar:nth-child(2) { animation-delay: 0.2s; }
+        .playing-bars .bar:nth-child(3) { animation-delay: 0.4s; }
+        .playing-bars .bar:nth-child(4) { animation-delay: 0.1s; }
+        .playing-bars .bar:nth-child(5) { animation-delay: 0.3s; }
+        @keyframes bounce { 0% { height: 5px; } 100% { height: 28px; } }
+
+        .radio-btn { background: var(--accent-color); color: #fff; border: none; padding: 12px 24px; border-radius: 30px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,168,132,0.4); transition: 0.2s; }
+        .radio-btn:hover { transform: scale(1.05); }
+
         .chat-footer { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); }
         .chat-footer input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; color: var(--text-primary); outline: none; font-size: 14px; }
         .chat-footer button { background: var(--accent-color); border: none; color: #fff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
@@ -123,14 +142,13 @@ HTML_TEMPLATE = """
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
         .form-group input, .form-group select { width: 100%; background: var(--bg-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; color: var(--text-primary); font-size: 13px; }
-        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary); }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
         .modal-buttons button { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-cancel { background: #334155; color: #cbd5e1; }
         .btn-save { background: var(--accent-color); color: #fff; }
     </style>
 </head>
-<body data-theme="dark-oled">
+<body data-theme="dark-oled" onload="initApp()">
     <div class="container">
         <div class="header">
             <div class="header-left" id="header-left-content">
@@ -148,8 +166,7 @@ HTML_TEMPLATE = """
         <div id="home-view" class="view-section">
             <div class="chat-list-body" id="chat-list">
                 <div style="padding: 30px; text-align: center;">
-                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Interface pronta e desbloqueada.</p>
-                    <button class="download-btn" onclick="refreshData()" type="button">🔄 Carregar Conversas da API</button>
+                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Carregando conversas recentes...</p>
                 </div>
             </div>
             <button class="fab-btn" onclick="openContactsModal()" type="button">💬</button>
@@ -183,7 +200,6 @@ HTML_TEMPLATE = """
                     <input type="text" id="mass-text">
                 </div>
                 <button class="download-btn" onclick="startMassDispatch()" type="button">Iniciar Disparo em Massa</button>
-                <div id="mass-status" style="margin-top: 10px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
 
@@ -203,16 +219,25 @@ HTML_TEMPLATE = """
                     <input type="number" id="sched-delay" value="10">
                 </div>
                 <button class="download-btn" onclick="scheduleMessage()" type="button">Agendar Disparo</button>
-                <div id="sched-list" style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
 
         <div id="radio-view" class="view-section hidden">
-            <div class="sub-body" style="align-items: center; justify-content: center; text-align: center;">
-                <h3 style="font-size: 18px; color: var(--accent-color); margin-bottom: 10px;">🎧 Web Rádio GB</h3>
-                <audio controls style="width: 100%; max-width: 300px;">
-                    <source src="https://ice.fabricahost.com.br/radiomaringa" type="audio/mpeg">
-                </audio>
+            <div class="radio-container">
+                <div class="radio-disc" id="radio-disc"></div>
+                <h3 style="font-size: 18px; color: var(--accent-color); margin-bottom: 5px;">🎧 Deffine Web Rádio</h3>
+                <p id="radio-status-text" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">Toque para curtir o som</p>
+                
+                <div class="equalizer" id="equalizer">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+
+                <audio id="web-radio-audio" src="https://azuracast.deffine.com.br/listen/deffine_web_radio/radio.mp3"></audio>
+                <button class="radio-btn" id="radio-toggle-btn" onclick="toggleRadio()" type="button">▶️ OUVIR RÁDIO</button>
             </div>
         </div>
 
@@ -261,13 +286,6 @@ HTML_TEMPLATE = """
                 <label>API OpenAI Key</label>
                 <input type="password" id="api-key">
             </div>
-            <div class="form-group">
-                <label>IA Status</label>
-                <select id="ai-status">
-                    <option value="false">Desativado</option>
-                    <option value="true">Ativado</option>
-                </select>
-            </div>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeMods()" type="button">Cancelar</button>
                 <button class="btn-save" onclick="saveMods()" type="button">Salvar</button>
@@ -281,6 +299,24 @@ HTML_TEMPLATE = """
         let activeTabName = 'home';
         let allContactsCache = [];
 
+        function initApp() {
+            refreshData();
+            loadProfileInfo();
+        }
+
+        function loadProfileInfo() {
+            fetch('/get_profile')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.name) {
+                        document.getElementById('my-name').innerText = data.name;
+                    }
+                    if (data.pic) {
+                        document.getElementById('my-avatar').innerHTML = '<img src="' + data.pic + '" alt="Perfil">';
+                    }
+                }).catch(e => console.error(e));
+        }
+
         function switchTab(tab, btnElement) {
             activeTabName = tab;
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
@@ -289,7 +325,7 @@ HTML_TEMPLATE = """
 
             document.getElementById('header-buttons').innerHTML = '<button class="mods-btn" onclick="openMods()" type="button">⚙️ Mods</button>';
 
-            if (tab === 'home') document.getElementById('home-view').classList.remove('hidden');
+            if (tab === 'home') { document.getElementById('home-view').classList.remove('hidden'); refreshData(); }
             else if (tab === 'friends') document.getElementById('friends-view').classList.remove('hidden');
             else if (tab === 'groups') document.getElementById('groups-view').classList.remove('hidden');
             else if (tab === 'mass') document.getElementById('mass-view').classList.remove('hidden');
@@ -316,9 +352,6 @@ HTML_TEMPLATE = """
         }
 
         function refreshData() {
-            const listContainer = document.getElementById('chat-list');
-            listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando conversas...</div>';
-            
             fetch('/get_chats')
                 .then(res => res.json())
                 .then(data => {
@@ -331,14 +364,11 @@ HTML_TEMPLATE = """
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (!chats || chats.length === 0) {
-                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum chat recente.</div>';
+                listContainer.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-secondary);">Nenhum chat recente encontrado.</div>';
                 return;
             }
             chats.forEach(chat => {
-                let div = document.createElement('div');
-                div.className = 'avatar';
                 let avatarHTML = chat.pic ? '<img src="' + chat.pic + '">' : chat.name.substring(0,2).toUpperCase();
-                
                 let item = document.createElement('div');
                 item.className = 'chat-item';
                 item.onclick = () => openChatDirect(chat.id, chat.name, chat.pic);
@@ -441,6 +471,29 @@ HTML_TEMPLATE = """
             }).then(() => { input.value = ''; loadMessages(currentChatId); });
         }
 
+        function toggleRadio() {
+            const audio = document.getElementById('web-radio-audio');
+            const btn = document.getElementById('radio-toggle-btn');
+            const disc = document.getElementById('radio-disc');
+            const eq = document.getElementById('equalizer');
+            const statusTxt = document.getElementById('radio-status-text');
+
+            if (audio.paused) {
+                audio.play().then(() => {
+                    btn.innerText = '⏸️ PAUSAR RÁDIO';
+                    disc.classList.add('playing');
+                    eq.classList.add('playing-bars');
+                    statusTxt.innerText = 'Transmitindo ao vivo 🔴';
+                }).catch(e => alert('Erro ao reproduzir rádio: ' + e));
+            } else {
+                audio.pause();
+                btn.innerText = '▶️ OUVIR RÁDIO';
+                disc.classList.remove('playing');
+                eq.classList.remove('playing-bars');
+                statusTxt.innerText = 'Rádio pausada';
+            }
+        }
+
         function scheduleMessage() {
             const number = document.getElementById('sched-number').value.trim();
             const text = document.getElementById('sched-text').value;
@@ -471,7 +524,6 @@ HTML_TEMPLATE = """
                 .then(settings => {
                     document.getElementById('theme-select').value = settings.theme;
                     document.getElementById('api-key').value = settings.openai_api_key;
-                    document.getElementById('ai-status').value = settings.ai_enabled.toString();
                     document.getElementById('mods-modal').style.display = 'flex';
                 });
         }
@@ -482,7 +534,7 @@ HTML_TEMPLATE = """
             const settings = {
                 theme: document.getElementById('theme-select').value,
                 openai_api_key: document.getElementById('api-key').value,
-                ai_enabled: document.getElementById('ai-status').value === 'true',
+                ai_enabled: false,
                 auto_reply_enabled: false,
                 auto_reply_text: "",
                 lossless_media: true,
@@ -509,6 +561,25 @@ class MassModel(BaseModel):
 @app.get("/", response_class=HTMLResponse)
 def index():
     return HTML_TEMPLATE
+
+@app.get("/get_profile")
+def get_profile():
+    name = INSTANCE_NAME
+    pic = ""
+    try:
+        url = f"{EVOLUTION_URL}/instance/fetchInstances"
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            instances = res.json()
+            for inst in instances:
+                if inst.get("name") == INSTANCE_NAME:
+                    profile = inst.get("profile") or {}
+                    name = profile.get("name") or INSTANCE_NAME
+                    pic = profile.get("profilePictureUrl") or profile.get("pictureUrl", "")
+                    break
+    except Exception as e:
+        print(f"Erro perfil: {e}")
+    return {"name": name, "pic": pic}
 
 @app.get("/get_chats")
 def get_chats():
