@@ -1,16 +1,18 @@
 from datetime import datetime
-from flask import Flask, jsonify, render_template_string, request
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from pydantic import BaseModel
 
-app = Flask(__name__)
+app = FastAPI()
 
 # Configurações e Estado do GB Mods
 gb_settings = {
     "openai_api_key": "",
     "ai_enabled": False,
-    "anti_revoke": True,  # Anti-apagar mensagem ativado por padrão
-    "freeze_last_seen": True,  # Congelar visto por último
-    "anti_blue_tick": True,  # Ocultar confirmação de leitura
-    "ghost_mode": True,  # Ocultar "digitando..."
+    "anti_revoke": True,
+    "freeze_last_seen": True,
+    "anti_blue_tick": True,
+    "ghost_mode": True,
 }
 
 # Banco de dados simulado para as mensagens
@@ -18,12 +20,33 @@ mensagens = [
     {
         "id": 1,
         "sender": "Assistente WhatsApp GB",
-        "text": "Bem-vindo ao WhatsApp GB Custom! Configure suas opções no menu 'GB Mods'.",
+        "text": (
+            "Bem-vindo ao WhatsApp GB Custom (FastAPI)! Configure suas opções"
+            " no menu 'GB Mods'."
+        ),
         "time": "00:00",
         "is_me": False,
         "revoked": False,
     }
 ]
+
+
+class MessageModel(BaseModel):
+  text: str
+
+
+class RevokeModel(BaseModel):
+  id: int
+
+
+class SettingsModel(BaseModel):
+  openai_api_key: str
+  ai_enabled: bool
+  anti_revoke: bool
+  freeze_last_seen: bool
+  anti_blue_tick: bool
+  ghost_mode: bool
+
 
 HTML_TEMPLATE = """
 <!DOCTYPE html>
@@ -31,7 +54,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v12</title>
+    <title>WhatsApp GB Custom v12 (FastAPI)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0b141a; color: #e9edef; display: flex; justify-content: center; align-items: center; height: 100vh; }
@@ -91,9 +114,7 @@ HTML_TEMPLATE = """
             <button class="mods-btn" onclick="openMods()">⚙️ GB Mods</button>
         </div>
 
-        <div class="chat-body" id="chat-body">
-            <!-- As mensagens entram aqui dinamicamente -->
-        </div>
+        <div class="chat-body" id="chat-body"></div>
 
         <div class="chat-footer">
             <input type="text" id="message-input" placeholder="Digite uma mensagem..." onkeypress="handleKeyPress(event)">
@@ -243,41 +264,35 @@ HTML_TEMPLATE = """
 """
 
 
-@app.route("/")
+@app.get("/", response_class=HTMLResponse)
 def index():
-  return render_template_string(HTML_TEMPLATE)
+  return HTML_TEMPLATE
 
 
-@app.route("/get_messages", methods=["GET"])
+@app.get("/get_messages")
 def get_messages():
-  return jsonify({"messages": mensagens})
+  return {"messages": mensagens}
 
 
-@app.route("/send_message", methods=["POST"])
-def send_message():
-  data = request.json
-  text = data.get("text", "")
+@app.post("/send_message")
+def send_message(data: MessageModel):
   now = datetime.now().strftime("%H:%M")
 
   # Adiciona mensagem enviada por você
   msg_id = len(mensagens) + 1
   mensagens.append(
-      {"id": msg_id, "sender": "Você", "text": text, "time": now, "is_me": True, "revoked": False}
+      {"id": msg_id, "sender": "Você", "text": data.text, "time": now, "is_me": True, "revoked": False}
   )
 
-  # Se a IA estiver ativada, gera resposta inteligente (ou resposta manual limpa se desativada)
+  # Se a IA estiver ativada
   if gb_settings["ai_enabled"] and gb_settings["openai_api_key"]:
-    # Exemplo de integração OpenAI simplificada ou simulada inteligente
     resp_text = (
-        f"🤖 [IA Ativa] Resposta inteligente baseada na sua mensagem: '{text}'"
+        f"🤖 [IA Ativa] Resposta inteligente baseada na sua mensagem: '{data.text}'"
     )
   else:
-    # Modo manual puro: não envia resposta automática incômoda, apenas aguarda interações reais
-    return jsonify({"status": "success"})
+    # Modo manual puro: sem respostas automáticas incômodas
+    return {"status": "success"}
 
-  import time
-
-  time.sleep(1)
   resp_id = len(mensagens) + 1
   mensagens.append({
       "id": resp_id,
@@ -288,39 +303,31 @@ def send_message():
       "revoked": False,
   })
 
-  return jsonify({"status": "success"})
+  return {"status": "success"}
 
 
-@app.route("/revoke_message", methods=["POST"])
-def revoke_message():
-  data = request.json
-  msg_id = data.get("id")
+@app.post("/revoke_message")
+def revoke_message(data: RevokeModel):
   for m in mensagens:
-    if m["id"] == msg_id:
+    if m["id"] == data.id:
       if gb_settings["anti_revoke"]:
-        # Se o anti-revoke estiver ligado, marca como revogada mas mantém o texto visível!
         m["revoked"] = True
       else:
         m["text"] = "Esta mensagem foi apagada."
-  return jsonify({"status": "success"})
+  return {"status": "success"}
 
 
-@app.route("/get_settings", methods=["GET"])
+@app.get("/get_settings")
 def get_settings():
-  return jsonify(gb_settings)
+  return gb_settings
 
 
-@app.route("/save_settings", methods=["POST"])
-def save_settings():
-  data = request.json
-  gb_settings["openai_api_key"] = data.get("openai_api_key", "")
-  gb_settings["ai_enabled"] = data.get("ai_enabled", False)
-  gb_settings["anti_revoke"] = data.get("anti_revoke", True)
-  gb_settings["freeze_last_seen"] = data.get("freeze_last_seen", True)
-  gb_settings["anti_blue_tick"] = data.get("anti_blue_tick", True)
-  gb_settings["ghost_mode"] = data.get("ghost_mode", True)
-  return jsonify({"status": "success"})
-
-
-if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=5000)
+@app.post("/save_settings")
+def save_settings(data: SettingsModel):
+  gb_settings["openai_api_key"] = data.openai_api_key
+  gb_settings["ai_enabled"] = data.ai_enabled
+  gb_settings["anti_revoke"] = data.anti_revoke
+  gb_settings["freeze_last_seen"] = data.freeze_last_seen
+  gb_settings["anti_blue_tick"] = data.anti_blue_tick
+  gb_settings["ghost_mode"] = data.ghost_mode
+  return {"status": "success"}
