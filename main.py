@@ -7,7 +7,6 @@ import requests
 
 app = FastAPI()
 
-# Configurações da Evolution API
 EVOLUTION_URL = "https://evolution.mxbr.com.br"
 INSTANCE_NAME = "EnjoyWeb"
 EVOLUTION_API_KEY = "429683C4C977415CAAFCCE10F7D57E11"
@@ -17,7 +16,6 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# Configurações do GB Mods
 gb_settings = {
     "openai_api_key": "",
     "ai_enabled": False,
@@ -95,7 +93,6 @@ HTML_TEMPLATE = """
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
         .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
         
-        /* Menu Inferior Horizontal */
         .bottom-nav { background: var(--header-bg); border-top: 1px solid var(--border-color); display: flex; overflow-x: auto; padding: 6px 4px; gap: 4px; z-index: 50; white-space: nowrap; }
         .bottom-nav::-webkit-scrollbar { display: none; }
         .nav-item { background: transparent; border: none; color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
@@ -159,7 +156,7 @@ HTML_TEMPLATE = """
             <div class="chat-list-body" id="chat-list">
                 <div style="padding: 30px; text-align: center;">
                     <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Interface pronta e desbloqueada.</p>
-                    <button class="download-btn" onclick="refreshData()">🔄 Carregar Conversas da API</button>
+                    <button class="download-btn" id="btn-refresh" type="button">🔄 Carregar Conversas da API</button>
                 </div>
             </div>
             <button class="fab-btn" onclick="openContactsModal()" title="Nova Conversa">💬</button>
@@ -168,7 +165,7 @@ HTML_TEMPLATE = """
         <div id="friends-view" class="view-section hidden">
             <div class="chat-list-body" id="friends-list">
                 <div style="padding: 30px; text-align: center;">
-                    <button class="download-btn" onclick="loadFriends()">👥 Carregar Contatos</button>
+                    <button class="download-btn" id="btn-friends" type="button">👥 Carregar Contatos</button>
                 </div>
             </div>
         </div>
@@ -176,7 +173,7 @@ HTML_TEMPLATE = """
         <div id="groups-view" class="view-section hidden">
             <div class="chat-list-body" id="groups-list">
                 <div style="padding: 30px; text-align: center;">
-                    <button class="download-btn" onclick="loadGroups()">📢 Carregar Grupos</button>
+                    <button class="download-btn" id="btn-groups" type="button">📢 Carregar Grupos</button>
                 </div>
             </div>
         </div>
@@ -192,7 +189,7 @@ HTML_TEMPLATE = """
                     <label>Mensagem do Disparo</label>
                     <input type="text" id="mass-text" placeholder="Promoção imperdível hoje!">
                 </div>
-                <button class="download-btn" onclick="startMassDispatch()">Iniciar Disparo em Massa</button>
+                <button class="download-btn" id="btn-mass" type="button">Iniciar Disparo em Massa</button>
                 <div id="mass-status" style="margin-top: 10px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
@@ -212,7 +209,7 @@ HTML_TEMPLATE = """
                     <label>Disparar em quantos segundos?</label>
                     <input type="number" id="sched-delay" value="10">
                 </div>
-                <button class="download-btn" onclick="scheduleMessage()">Agendar Disparo</button>
+                <button class="download-btn" id="btn-sched" type="button">Agendar Disparo</button>
                 <div id="sched-list" style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
@@ -231,19 +228,19 @@ HTML_TEMPLATE = """
         <div id="chat-view" class="view-section hidden">
             <div class="chat-body" id="chat-body"></div>
             <div class="chat-footer">
-                <input type="text" id="message-input" placeholder="Digite uma mensagem..." onkeypress="handleKeyPress(event)">
-                <button onclick="sendMessage()">Enviar</button>
+                <input type="text" id="message-input" placeholder="Digite uma mensagem...">
+                <button id="btn-send-msg" type="button">Enviar</button>
             </div>
         </div>
 
         <!-- Menu Horizontal Inferior -->
         <div class="bottom-nav">
-            <button class="nav-item active" onclick="switchTab('home', this)">🏠 Início</button>
-            <button class="nav-item" onclick="switchTab('friends', this)">👥 Amigos</button>
-            <button class="nav-item" onclick="switchTab('groups', this)">📢 Grupos</button>
-            <button class="nav-item" onclick="switchTab('mass', this)">🚀 Disparo Massa</button>
-            <button class="nav-item" onclick="switchTab('schedule', this)">⏰ Agendamento</button>
-            <button class="nav-item" onclick="switchTab('radio', this)">🎧 Web Rádio</button>
+            <button class="nav-item active" data-tab="home" type="button">🏠 Início</button>
+            <button class="nav-item" data-tab="friends" type="button">👥 Amigos</button>
+            <button class="nav-item" data-tab="groups" type="button">📢 Grupos</button>
+            <button class="nav-item" data-tab="mass" type="button">🚀 Disparo Massa</button>
+            <button class="nav-item" data-tab="schedule" type="button">⏰ Agendamento</button>
+            <button class="nav-item" data-tab="radio" type="button">🎧 Web Rádio</button>
         </div>
     </div>
 
@@ -253,13 +250,13 @@ HTML_TEMPLATE = """
             <h2>👥 Iniciar Conversa com Contato</h2>
             <div class="form-group">
                 <label>Pesquisar nome ou número</label>
-                <input type="text" id="contact-search-input" placeholder="Digite para buscar..." oninput="filterContacts()">
+                <input type="text" id="contact-search-input" placeholder="Digite para buscar...">
             </div>
             <div id="contacts-modal-list" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
                 <p style="text-align: center; color: var(--text-secondary);">Clique em carregar contatos...</p>
             </div>
             <div class="modal-buttons" style="margin-top: 14px;">
-                <button class="btn-cancel" onclick="closeContactsModal()">Fechar</button>
+                <button class="btn-cancel" id="btn-close-contacts" type="button">Fechar</button>
             </div>
         </div>
     </div>
@@ -300,8 +297,8 @@ HTML_TEMPLATE = """
             <label class="checkbox-group"><input type="checkbox" id="anti-blue-tick"> 👀 Ocultar Confirmação de Leitura</label>
             <label class="checkbox-group"><input type="checkbox" id="ghost-mode"> 👻 Ocultar "Digitando..."</label>
             <div class="modal-buttons">
-                <button class="btn-cancel" onclick="closeMods()">Cancelar</button>
-                <button class="btn-save" onclick="saveMods()">Salvar Alterações</button>
+                <button class="btn-cancel" id="btn-close-mods" type="button">Cancelar</button>
+                <button class="btn-save" id="btn-save-mods" type="button">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -311,6 +308,34 @@ HTML_TEMPLATE = """
         let currentChatName = '';
         let activeTabName = 'home';
         let allContactsCache = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Eventos do Menu Inferior
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchTab(btn.getAttribute('data-tab'), btn);
+                });
+            });
+
+            // Botões principais
+            document.getElementById('btn-refresh').addEventListener('click', refreshData);
+            document.getElementById('btn-friends').addEventListener('click', loadFriends);
+            document.getElementById('btn-groups').addEventListener('click', loadGroups);
+            document.getElementById('btn-mass').addEventListener('click', startMassDispatch);
+            document.getElementById('btn-sched').addEventListener('click', scheduleMessage);
+            document.getElementById('btn-send-msg').addEventListener('click', sendMessage);
+            document.getElementById('message-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+            
+            // Modais
+            document.getElementById('contact-search-input').addEventListener('input', filterContacts);
+            document.getElementById('btn-close-contacts').addEventListener('click', closeContactsModal);
+            document.getElementById('btn-close-mods').addEventListener('click', closeMods);
+            document.getElementById('btn-save-mods').addEventListener('click', saveMods);
+
+            // Botão Mods do topo
+            window.openMods = openMods;
+            window.openContactsModal = openContactsModal;
+        });
 
         function switchTab(tab, btnElement) {
             activeTabName = tab;
@@ -322,19 +347,12 @@ HTML_TEMPLATE = """
             const headerBtns = document.getElementById('header-buttons');
             headerBtns.innerHTML = `<button class="mods-btn" onclick="openMods()">⚙️ Mods</button>`;
 
-            if (tab === 'home') {
-                document.getElementById('home-view').classList.remove('hidden');
-            } else if (tab === 'friends') {
-                document.getElementById('friends-view').classList.remove('hidden');
-            } else if (tab === 'groups') {
-                document.getElementById('groups-view').classList.remove('hidden');
-            } else if (tab === 'mass') {
-                document.getElementById('mass-view').classList.remove('hidden');
-            } else if (tab === 'schedule') {
-                document.getElementById('schedule-view').classList.remove('hidden');
-            } else if (tab === 'radio') {
-                document.getElementById('radio-view').classList.remove('hidden');
-            }
+            if (tab === 'home') document.getElementById('home-view').classList.remove('hidden');
+            else if (tab === 'friends') document.getElementById('friends-view').classList.remove('hidden');
+            else if (tab === 'groups') document.getElementById('groups-view').classList.remove('hidden');
+            else if (tab === 'mass') document.getElementById('mass-view').classList.remove('hidden');
+            else if (tab === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
+            else if (tab === 'radio') document.getElementById('radio-view').classList.remove('hidden');
         }
 
         function openChatDirect(id, name, pic) {
@@ -351,19 +369,22 @@ HTML_TEMPLATE = """
             
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('chat-view').classList.remove('hidden');
-            document.getElementById('header-buttons').innerHTML = `<button class="back-btn" onclick="switchTab('${activeTabName}')">⬅️ Voltar</button>`;
+            document.getElementById('header-buttons').innerHTML = `<button class="back-btn" type="button" onclick="switchTab('${activeTabName}')">⬅️ Voltar</button>`;
             loadMessages(id);
         }
 
         function refreshData() {
-            document.getElementById('chat-list').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando conversas na API...</div>';
+            const listContainer = document.getElementById('chat-list');
+            listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando conversas na API...</div>';
+            
             fetch('/get_chats')
                 .then(res => res.json())
                 .then(data => {
                     if(data.theme) document.body.setAttribute('data-theme', data.theme);
                     renderChatList(data.chats);
                 }).catch(e => {
-                    document.getElementById('chat-list').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro de conexão com o servidor.</div>';
+                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro de conexão com o servidor. Verifique o console.</div>';
+                    console.error(e);
                 });
         }
 
@@ -373,7 +394,7 @@ HTML_TEMPLATE = """
             if (!chats || chats.length === 0) {
                 listContainer.innerHTML = `
                     <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                        <p style="margin-bottom:10px;">Nenhum chat recente encontrado.</p>
+                        <p style="margin-bottom:10px;">Nenhum chat recente encontrado na Evolution API.</p>
                         <button class="download-btn" onclick="refreshData()">Tentar Novamente</button>
                     </div>`;
                 return;
@@ -395,11 +416,11 @@ HTML_TEMPLATE = """
         }
 
         function loadFriends() {
-            document.getElementById('friends-list').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando contatos...</div>';
+            const container = document.getElementById('friends-list');
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando contatos...</div>';
             fetch('/get_contacts')
                 .then(res => res.json())
                 .then(data => {
-                    const container = document.getElementById('friends-list');
                     container.innerHTML = '';
                     const contacts = data.contacts || [];
                     if(contacts.length === 0) {
@@ -420,17 +441,18 @@ HTML_TEMPLATE = """
                         `;
                         container.appendChild(div);
                     });
-                }).catch(() => {
-                    document.getElementById('friends-list').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro ao carregar contatos.</div>';
+                }).catch(e => {
+                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro ao carregar contatos.</div>';
+                    console.error(e);
                 });
         }
 
         function loadGroups() {
-            document.getElementById('groups-list').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando grupos...</div>';
+            const container = document.getElementById('groups-list');
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando grupos...</div>';
             fetch('/get_groups')
                 .then(res => res.json())
                 .then(data => {
-                    const container = document.getElementById('groups-list');
                     container.innerHTML = '';
                     const groups = data.groups || [];
                     if(groups.length === 0) {
@@ -451,8 +473,9 @@ HTML_TEMPLATE = """
                         `;
                         container.appendChild(div);
                     });
-                }).catch(() => {
-                    document.getElementById('groups-list').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro ao carregar grupos.</div>';
+                }).catch(e => {
+                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro ao carregar grupos.</div>';
+                    console.error(e);
                 });
         }
 
@@ -532,8 +555,6 @@ HTML_TEMPLATE = """
                 loadMessages(currentChatId);
             });
         }
-
-        function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
         function scheduleMessage() {
             const number = document.getElementById('sched-number').value.trim();
@@ -716,10 +737,11 @@ def send_message(data: MessageModel):
 
 @app.post("/mass_dispatch")
 def mass_dispatch(data: MassModel):
+    dict_data = data.dict() if hasattr(data, 'dict') else data.model_dump()
     try:
-        for num in data.numbers:
+        for num in dict_data.get("numbers", []):
             url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
-            payload = {"number": num, "text": data.text, "delay": 1200}
+            payload = {"number": num, "text": dict_data.get("text"), "delay": 1200}
             requests.post(url, json=payload, headers=headers, timeout=5)
         return {"status": "success"}
     except Exception as e:
@@ -744,5 +766,5 @@ def get_settings():
 
 @app.post("/save_settings")
 def save_settings(data: SettingsModel):
-    gb_settings.update(data.dict())
+    gb_settings.update(data.dict() if hasattr(data, 'dict') else data.model_dump())
     return {"status": "success"}
