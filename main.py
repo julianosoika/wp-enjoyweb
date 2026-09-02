@@ -628,12 +628,12 @@ def get_profile():
     pic = ""
     try:
         url_pic = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
-        res_pic = requests.post(url_pic, json={"number": INSTANCE_NAME}, headers=headers, timeout=5)
+        res_pic = requests.post(url_pic, json={"number": INSTANCE_NAME}, headers=headers, timeout=1.5)
         if res_pic.status_code == 200:
             data = res_pic.json()
             pic = data.get("profilePictureUrl") or data.get("pictureUrl") or ""
-    except Exception as e:
-        print(f"Erro perfil: {e}")
+    except Exception:
+        pass
     return {"name": name, "pic": pic}
 
 @app.get("/get_chats")
@@ -656,7 +656,7 @@ def get_chats():
                 pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
                 if not pic and "@s.whatsapp.net" in jid:
                     try:
-                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=2)
+                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=1)
                         if p_res.status_code == 200:
                             pic = p_res.json().get("profilePictureUrl") or p_res.json().get("pictureUrl", "")
                     except:
@@ -690,7 +690,7 @@ def get_contacts():
                 pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
                 if not pic and "@s.whatsapp.net" in jid:
                     try:
-                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=2)
+                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=1)
                         if p_res.status_code == 200:
                             pic = p_res.json().get("profilePictureUrl") or p_res.json().get("pictureUrl", "")
                     except:
