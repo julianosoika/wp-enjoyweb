@@ -570,11 +570,24 @@ def get_profile():
     
     return {"name": profile_name, "pic": profile_pic}
 
+def fetch_profile_pic(jid: str) -> str:
+    """Busca a foto de perfil individual se a Evolution permitir"""
+    try:
+        url = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
+        response = requests.post(url, json={"number": jid}, headers=headers, timeout=3)
+        if response.status_code == 200:
+            res_data = response.json()
+            return res_data.get("profilePictureUrl") or res_data.get("pictureUrl") or ""
+    except:
+        pass
+    return ""
+
 @app.get("/get_chats")
 def get_chats():
-    chats_list = []
+    chats_dict = {}
+    
     try:
-        # Tenta buscar os chats reais do histórico da Evolution API (v2)
+        # 1. Tenta buscar os chats salvos via cache/histórico da Evolution (v2)
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
@@ -582,12 +595,12 @@ def get_chats():
             items = data if isinstance(data, list) else (data.get("chats") or data.get("records") or [])
             for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
+                if not jid: continue
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
                 pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
                 last_message = c.get("lastMessage", {})
                 last_text = last_message.get("conversation") or last_message.get("text") or last_message.get("extendedTextMessage", {}).get("text") or "Conversa ativa"
                 
-                # Formata timestamp se houver
                 timestamp = last_message.get("messageTimestamp", 0)
                 time_str = ""
                 try:
@@ -596,37 +609,67 @@ def get_chats():
                 except:
                     pass
 
-                chats_list.append({
+                chats_dict[jid] = {
                     "id": jid,
                     "name": name,
                     "last_msg": last_text,
                     "pic": pic,
                     "time": time_str
-                })
-        
-        # Se a rota padrão findChats não retornar nada, tentamos buscar os contatos ativos/recentes como fallback inteligente para o histórico
-        if not chats_list:
+                }
+    except Exception as e:
+        print(f"Erro ao buscar chats: {e}")
+
+    try:
+        # 2. Busca também os Grupos da instância para incluir na aba principal
+        url_groups = f"{EVOLUTION_URL}/group/fetchAllGroups/{INSTANCE_NAME}?getParticipants=false"
+        res_g = requests.get(url_groups, headers=headers, timeout=5)
+        if res_g.status_code == 200:
+            g_data = res_g.json()
+            groups_list = g_data if isinstance(g_data, list) else (g_data.get("groups") or [])
+            for g in groups_list:
+                jid = g.get("id") or g.get("Jid", "")
+                if not jid: continue
+                name = g.get("subject") or g.get("name") or "Grupo WhatsApp"
+                pic = g.get("pictureUrl") or g.get("profilePictureUrl", "")
+                
+                if jid not in chats_dict:
+                    chats_dict[jid] = {
+                        "id": jid,
+                        "name": name,
+                        "last_msg": "Grupo do WhatsApp",
+                        "pic": pic,
+                        "time": ""
+                    }
+    except Exception as e:
+        print(f"Erro ao buscar grupos: {e}")
+
+    # 3. Fallback: Se ainda vier vazio, busca os contatos para preencher
+    if not chats_dict:
+        try:
             url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
             res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
             if res_c.status_code == 200:
                 c_data = res_c.json()
                 c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
-                for c in c_items[:15]: # Pega os primeiros 15 contatos recentes
+                for c in c_items:
                     jid = c.get("id") or c.get("remoteJid", "")
+                    if not jid: continue
                     name = c.get("name") or c.get("pushName") or jid.split("@")[0]
                     pic = c.get("profilePictureUrl", "")
-                    chats_list.append({
+                    chats_dict[jid] = {
                         "id": jid,
                         "name": name,
                         "last_msg": "Toque para ver mensagens",
                         "pic": pic,
                         "time": ""
-                    })
-    except Exception as e:
-        print(f"Erro ao buscar chats: {e}")
+                    }
+        except Exception as e:
+            print(f"Erro ao buscar contatos fallback: {e}")
 
+    # Garante que as fotos vazias tentem ser buscadas individualmente se necessário ou retornadas limpas
+    final_chats = list(chats_dict.values())
     return {
-        "chats": chats_list,
+        "chats": final_chats,
         "theme": gb_settings["theme"]
     }
 
@@ -634,7 +677,6 @@ def get_chats():
 def get_statuses():
     statuses_list = []
     try:
-        # Tenta buscar status reais na Evolution API se houver suporte na instância
         url = f"{EVOLUTION_URL}/chat/findStatus/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
@@ -652,7 +694,6 @@ def get_statuses():
     except Exception as e:
         print(f"Erro ao buscar status reais: {e}")
 
-    # Fallback caso a API de status específica não retorne nada nesta versão da Evolution
     if not statuses_list:
         statuses_list.append({
             "name": "Nenhum status recente na API",
