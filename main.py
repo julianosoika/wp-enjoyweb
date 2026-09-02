@@ -14,7 +14,7 @@ gb_settings = {
     "freeze_last_seen": True,
     "anti_blue_tick": True,
     "ghost_mode": True,
-    "theme": "dark-oled",  # 'dark-oled', 'midnight-blue', 'neon-purple', 'light'
+    "theme": "dark-oled",
     "auto_reply_enabled": False,
     "auto_reply_text": "Olá! No momento estou ausente, responderei em breve.",
     "lossless_media": True,
@@ -167,13 +167,13 @@ HTML_TEMPLATE = """
         @media(min-width: 500px) { .container { height: 92vh; border-radius: 12px; } }
         
         /* Header */
-        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 60px; }
-        .header-left { display: flex; align-items: center; gap: 10px; }
+        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; }
+        .header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
         .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; }
-        .status-info h3 { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+        .status-info h3 { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-info p { font-size: 11px; color: var(--text-secondary); }
-        .header-btns { display: flex; gap: 4px; }
-        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
+        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
         .mods-btn:hover, .status-tab-btn:hover, .back-btn:hover { opacity: 0.85; }
 
         /* Views */
@@ -198,7 +198,6 @@ HTML_TEMPLATE = """
         .revoked-tag { font-style: italic; color: #f15c6d; font-size: 12px; display: block; margin-bottom: 4px; }
         .delete-msg-btn { background: none; border: none; color: var(--text-secondary); font-size: 10px; cursor: pointer; margin-left: 5px; }
         .delete-msg-btn:hover { color: #f15c6d; }
-        .badge-lossless { font-size: 9px; background: #00a884; color: #fff; padding: 1px 4px; border-radius: 4px; margin-left: 4px; }
 
         /* Secondary Bodies (Status / Schedule) */
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
@@ -240,17 +239,15 @@ HTML_TEMPLATE = """
                 </div>
             </div>
             <div class="header-btns" id="header-buttons">
-                <button class="status-tab-btn" onclick="toggleView('status')">Status 📸</button>
-                <button class="status-tab-btn" onclick="toggleView('schedule')">Agendar ⏰</button>
+                <button class="status-tab-btn" onclick="navigateTo('status')">Status 📸</button>
+                <button class="status-tab-btn" onclick="navigateTo('schedule')">Agendar ⏰</button>
                 <button class="mods-btn" onclick="openMods()">⚙️ Mods</button>
             </div>
         </div>
 
         <!-- View 1: Lista de Conversas (Home) -->
         <div id="home-view" class="view-section">
-            <div class="chat-list-body" id="chat-list">
-                <!-- Preenchido via JavaScript -->
-            </div>
+            <div class="chat-list-body" id="chat-list"></div>
         </div>
 
         <!-- View 2: Tela de Chat Individual -->
@@ -272,7 +269,7 @@ HTML_TEMPLATE = """
                         <h4>Ana Souza</h4>
                         <span>Postado há 2 horas (Foto HD)</span>
                     </div>
-                    <button class="download-btn" onclick="alert('Status baixado em alta resolução com sucesso!')">Baixar</button>
+                    <button class="download-btn" onclick="alert('Status baixado com sucesso!')">Baixar</button>
                 </div>
                 <div class="status-card">
                     <video src="https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1186-large.mp4" muted autoplay loop></video>
@@ -280,7 +277,7 @@ HTML_TEMPLATE = """
                         <h4>Carlos Tech</h4>
                         <span>Postado há 5 horas (Vídeo)</span>
                     </div>
-                    <button class="download-btn" onclick="alert('Vídeo de status baixado com sucesso!')">Baixar</button>
+                    <button class="download-btn" onclick="alert('Vídeo baixado com sucesso!')">Baixar</button>
                 </div>
             </div>
         </div>
@@ -350,7 +347,7 @@ HTML_TEMPLATE = """
                 <input type="checkbox" id="auto-reply-enabled"> 🤖 Ativar Resposta Automática
             </label>
             <label class="checkbox-group">
-                <input type="checkbox" id="lossless-media"> 📷 Enviar Mídia em Qualidade Máxima (Lossless)
+                <input type="checkbox" id="lossless-media"> 📷 Enviar Mídia em Qualidade Máxima
             </label>
             <label class="checkbox-group">
                 <input type="checkbox" id="anti-revoke"> 🛡️ Anti-Revogação (Impedir apagar mensagens)
@@ -374,8 +371,10 @@ HTML_TEMPLATE = """
 
     <script>
         let currentChatId = null;
+        let currentView = 'home';
 
-        function toggleView(view) {
+        function navigateTo(view) {
+            currentView = view;
             document.getElementById('home-view').classList.add('hidden');
             document.getElementById('chat-view').classList.add('hidden');
             document.getElementById('status-view').classList.add('hidden');
@@ -393,14 +392,14 @@ HTML_TEMPLATE = """
                         <p>Online (Modo Fantasma)</p>
                     </div>`;
                 headerBtns.innerHTML = `
-                    <button class="status-tab-btn" onclick="toggleView('status')">Status 📸</button>
-                    <button class="status-tab-btn" onclick="toggleView('schedule')">Agendar ⏰</button>
+                    <button class="status-tab-btn" onclick="navigateTo('status')">Status 📸</button>
+                    <button class="status-tab-btn" onclick="navigateTo('schedule')">Agendar ⏰</button>
                     <button class="mods-btn" onclick="openMods()">⚙️ Mods</button>`;
-                loadChatList();
+                refreshData();
             } else if (view === 'chat') {
                 document.getElementById('chat-view').classList.remove('hidden');
-                headerBtns.innerHTML = `<button class="back-btn" onclick="toggleView('home')">⬅️ Voltar</button>`;
-                loadCurrentChat();
+                headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
+                refreshData();
             } else if (view === 'status' || view === 'schedule') {
                 if (view === 'status') document.getElementById('status-view').classList.remove('hidden');
                 if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
@@ -409,29 +408,20 @@ HTML_TEMPLATE = """
                     <div class="status-info">
                         <h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3>
                     </div>`;
-                headerBtns.innerHTML = `<button class="back-btn" onclick="toggleView('home')">⬅️ Voltar ao Início</button>`;
+                headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
             }
         }
 
-        function loadAppData() {
+        function refreshData() {
             fetch('/get_data')
                 .then(res => res.json())
                 .then(data => {
                     document.body.setAttribute('data-theme', data.theme);
-                    if (document.getElementById('home-view').classList.contains('hidden') === false) {
+                    if (currentView === 'home') {
                         renderChatList(data.chats);
-                    } else if (currentChatId !== null) {
+                    } else if (currentView === 'chat' && currentChatId !== null) {
                         renderMessages(data.chats[currentChatId]);
                     }
-                });
-        }
-
-        function loadChatList() {
-            fetch('/get_data')
-                .then(res => res.json())
-                .then(data => {
-                    document.body.setAttribute('data-theme', data.theme);
-                    renderChatList(data.chats);
                 });
         }
 
@@ -461,16 +451,7 @@ HTML_TEMPLATE = """
                     <h3>${name}</h3>
                     <p>Online</p>
                 </div>`;
-            toggleView('chat');
-        }
-
-        function loadCurrentChat() {
-            if (!currentChatId) return;
-            fetch('/get_data')
-                .then(res => res.json())
-                .then(data => {
-                    renderMessages(data.chats[currentChatId]);
-                });
+            navigateTo('chat');
         }
 
         function renderMessages(chat) {
@@ -508,7 +489,7 @@ HTML_TEMPLATE = """
                 body: JSON.stringify({ chat_id: parseInt(currentChatId), text: text })
             }).then(() => {
                 input.value = '';
-                loadCurrentChat();
+                refreshData();
             });
         }
 
@@ -519,7 +500,7 @@ HTML_TEMPLATE = """
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat_id: chatId, msg_id: msgId })
-            }).then(() => loadCurrentChat());
+            }).then(() => refreshData());
         }
 
         function scheduleMessage() {
@@ -568,11 +549,9 @@ HTML_TEMPLATE = """
                 lossless_media: document.getElementById('lossless-media').checked,
                 anti_revoke: document.getElementById('anti-revoke').checked,
                 freeze_last_seen: document.getElementById('freeze-last-seen').checked,
-                anti-blue-tick: document.getElementById('anti-blue-tick').checked,
+                anti_blue_tick: document.getElementById('anti-blue-tick').checked,
                 ghost_mode: document.getElementById('ghost-mode').checked
             };
-            // Correção da chave anti-blue-tick no objeto abaixo
-            settings.anti_blue_tick = document.getElementById('anti-blue-tick').checked;
 
             fetch('/save_settings', {
                 method: 'POST',
@@ -580,13 +559,18 @@ HTML_TEMPLATE = """
                 body: JSON.stringify(settings)
             }).then(() => {
                 closeMods();
-                loadChatList();
+                refreshData();
                 alert('Configurações GB v13 salvas com sucesso!');
             });
         }
 
-        setInterval(loadAppData, 3000);
-        loadChatList();
+        setInterval(() => {
+            if (currentView === 'home' || currentView === 'chat') {
+                refreshData();
+            }
+        }, 3000);
+
+        navigateTo('home');
     </script>
 </body>
 </html>
@@ -610,13 +594,11 @@ def send_message(data: MessageModel):
     if not chat:
         return {"status": "error"}
 
-    # Adiciona a mensagem do usuário
     msg_id = len(chat["messages"]) + 1
     chat["messages"].append({"id": msg_id, "sender": "Você", "text": data.text, "time": now, "is_me": True, "revoked": False})
     chat["last_msg"] = f"Você: {data.text}"
     chat["time"] = now
 
-    # Resposta Inteligente (IA) ou Auto-Reply
     if gb_settings["ai_enabled"] and gb_settings["openai_api_key"]:
         resp_text = f"🤖 [ChatGPT] Resposta para: '{data.text}'"
     elif gb_settings["auto_reply_enabled"]:
