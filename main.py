@@ -111,7 +111,7 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .fab-btn { position: absolute; bottom: 65px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 50; transition: transform 0.2s; }
+        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 50; transition: transform 0.2s; }
         .fab-btn:hover { transform: scale(1.08); }
 
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
@@ -120,10 +120,6 @@ HTML_TEMPLATE = """
         .message.sent { background: var(--sent-bg); align-self: flex-end; border-top-right-radius: 0; }
         .message .time { font-size: 10px; color: var(--text-secondary); float: right; margin-left: 8px; margin-top: 4px; line-height: 15px; }
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .status-card { background: var(--header-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .status-card img { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
-        .status-info-box h4 { font-size: 14px; color: var(--text-primary); }
-        .status-info-box span { font-size: 11px; color: var(--text-secondary); }
         .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .chat-footer { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); }
         .chat-footer input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; color: var(--text-primary); outline: none; font-size: 14px; }
@@ -149,7 +145,7 @@ HTML_TEMPLATE = """
             <div class="header-left" id="header-left-content">
                 <div class="avatar" id="my-avatar">WA</div>
                 <div class="status-info">
-                    <h3 id="my-name">Carregando...</h3>
+                    <h3 id="my-name">EnjoyWeb</h3>
                     <p>Online (Evolution API)</p>
                 </div>
             </div>
@@ -160,7 +156,9 @@ HTML_TEMPLATE = """
 
         <!-- Telas / Seções -->
         <div id="home-view" class="view-section">
-            <div class="chat-list-body" id="chat-list"></div>
+            <div class="chat-list-body" id="chat-list">
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando conversas...</div>
+            </div>
             <button class="fab-btn" onclick="openContactsModal()" title="Nova Conversa">💬</button>
         </div>
 
@@ -217,8 +215,6 @@ HTML_TEMPLATE = """
                 <h3 style="font-size: 18px; color: var(--accent-color); margin-bottom: 10px;">🎧 Web Rádio GB</h3>
                 <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">Ouça sua rádio favorita enquanto gerencia suas mensagens.</p>
                 <audio controls style="width: 100%; max-width: 300px;">
-                    <object style="position:fixed;top:0px;left:0px;width:0px;height:0px;z-index:999999;" id="__gwt_historyFrame" src="javascript:false" tabIndex="-1">
-                    </object>
                     <source src="https://ice.fabricahost.com.br/radiomaringa" type="audio/mpeg">
                     Seu navegador não suporta áudio.
                 </audio>
@@ -359,37 +355,40 @@ HTML_TEMPLATE = """
             fetch('/get_profile')
                 .then(res => res.json())
                 .then(data => {
+                    if(!data.name) return;
                     const headerLeft = document.getElementById('header-left-content');
                     let avatarHTML = data.pic ? `<img src="${data.pic}" alt="Perfil">` : (data.name || "WA").substring(0,2).toUpperCase();
                     headerLeft.innerHTML = `
                         <div class="avatar">${avatarHTML}</div>
                         <div class="status-info">
-                            <h3>${data.name || "WhatsApp EnjoyWeb"}</h3>
+                            <h3>${data.name}</h3>
                             <p>Online (Evolution API)</p>
                         </div>
                     `;
-                });
+                }).catch(e => console.log("Perfil ignorado temporariamente"));
         }
 
         function refreshData() {
             fetch('/get_chats')
                 .then(res => res.json())
                 .then(data => {
-                    document.body.setAttribute('data-theme', data.theme);
+                    if(data.theme) document.body.setAttribute('data-theme', data.theme);
                     if (activeTabName === 'home') {
                         renderChatList(data.chats);
                     }
+                }).catch(e => {
+                    document.getElementById('chat-list').innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro ao carregar conversas. Instância conectada?</div>';
                 });
         }
 
         function renderChatList(chats) {
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
-            if (chats.length === 0) {
+            if (!chats || chats.length === 0) {
                 listContainer.innerHTML = `
                     <div style="padding: 30px 20px; text-align: center; color: var(--text-secondary);">
                         <p style="font-size:15px; margin-bottom:8px;">Nenhum chat recente encontrado.</p>
-                        <p style="font-size:12px; margin-bottom:15px;">Use o botão 💬 abaixo ou vá na aba <b>Amigos</b> / <b>Grupos</b> para iniciar.</p>
+                        <p style="font-size:12px; margin-bottom:15px;">Use o botão 💬 abaixo ou vá na aba <b>Amigos</b> para iniciar.</p>
                         <button class="download-btn" onclick="switchTab('friends', document.querySelectorAll('.nav-item')[1])">Ver Meus Contatos</button>
                     </div>`;
                 return;
@@ -514,7 +513,7 @@ HTML_TEMPLATE = """
                 .then(data => {
                     const chatBody = document.getElementById('chat-body');
                     chatBody.innerHTML = '';
-                    if(data.messages.length === 0) {
+                    if(!data.messages || data.messages.length === 0) {
                         chatBody.innerHTML = '<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">Nenhuma mensagem neste chat ainda. Envie uma mensagem abaixo!</div>';
                         return;
                     }
@@ -622,8 +621,11 @@ HTML_TEMPLATE = """
             });
         }
 
-        loadProfileHeader();
-        switchTab('home', document.querySelector('.nav-item'));
+        // Executar chamadas em segundo plano de forma totalmente assíncrona para nunca travar a tela
+        setTimeout(() => {
+            loadProfileHeader();
+            refreshData();
+        }, 100);
     </script>
 </body>
 </html>
@@ -643,7 +645,7 @@ def get_profile():
     profile_pic = ""
     try:
         url = f"{EVOLUTION_URL}/instance/fetchInstances"
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=3)
         if response.status_code == 200:
             data = response.json()
             instances = data if isinstance(data, list) else data.get("instances", [])
@@ -654,7 +656,7 @@ def get_profile():
                     profile_pic = inst.get("profilePictureUrl") or inst.get("profilePicUrl", "")
                     break
     except Exception as e:
-        print(f"Erro ao buscar perfil: {e}")
+        print(f"Aviso perfil: {e}")
     return {"name": profile_name, "pic": profile_pic}
 
 @app.get("/get_chats")
@@ -662,7 +664,7 @@ def get_chats():
     chats_dict = {}
     try:
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=3)
         if response.status_code == 200:
             data = response.json()
             items = data if isinstance(data, list) else (data.get("chats") or data.get("records") or [])
@@ -677,7 +679,7 @@ def get_chats():
                 time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
                 chats_dict[jid] = {"id": jid, "name": name, "last_msg": last_text, "pic": pic, "time": time_str}
     except Exception as e:
-        print(f"Erro chats: {e}")
+        print(f"Aviso chats: {e}")
 
     return {"chats": list(chats_dict.values()), "theme": gb_settings["theme"]}
 
@@ -686,7 +688,7 @@ def get_contacts():
     contacts_list = []
     try:
         url = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
-        res = requests.post(url, json={}, headers=headers, timeout=5)
+        res = requests.post(url, json={}, headers=headers, timeout=3)
         if res.status_code == 200:
             data = res.json()
             items = data if isinstance(data, list) else data.get("contacts", [])
@@ -696,7 +698,7 @@ def get_contacts():
                 pic = c.get("profilePictureUrl", "")
                 contacts_list.append({"id": jid, "name": name, "pic": pic})
     except Exception as e:
-        print(f"Erro contatos: {e}")
+        print(f"Aviso contatos: {e}")
     return {"contacts": contacts_list}
 
 @app.get("/get_groups")
@@ -704,7 +706,7 @@ def get_groups():
     groups_list = []
     try:
         url = f"{EVOLUTION_URL}/group/fetchAllGroups/{INSTANCE_NAME}?getParticipants=false"
-        res = requests.get(url, headers=headers, timeout=5)
+        res = requests.get(url, headers=headers, timeout=3)
         if res.status_code == 200:
             data = res.json()
             items = data if isinstance(data, list) else (data.get("groups") or [])
@@ -714,7 +716,7 @@ def get_groups():
                 pic = g.get("pictureUrl") or g.get("profilePictureUrl", "")
                 groups_list.append({"id": jid, "name": name, "pic": pic})
     except Exception as e:
-        print(f"Erro grupos: {e}")
+        print(f"Aviso grupos: {e}")
     return {"groups": groups_list}
 
 @app.get("/get_messages")
@@ -723,7 +725,7 @@ def get_messages(chat_id: str):
     try:
         url = f"{EVOLUTION_URL}/chat/findMessages/{INSTANCE_NAME}"
         payload = {"where": {"remoteJid": chat_id}}
-        response = requests.post(url, json=payload, headers=headers, timeout=5)
+        response = requests.post(url, json=payload, headers=headers, timeout=3)
         if response.status_code == 200:
             data = response.json()
             messages_data = data if isinstance(data, list) else (data.get("messages", {}).get("records", []) or data.get("messages", []) or [])
@@ -735,7 +737,7 @@ def get_messages(chat_id: str):
                 time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
                 msgs.append({"text": str(body), "is_me": from_me, "time": time_str})
     except Exception as e:
-        print(f"Erro msgs: {e}")
+        print(f"Aviso msgs: {e}")
     return {"messages": msgs}
 
 @app.post("/send_message")
@@ -743,7 +745,7 @@ def send_message(data: MessageModel):
     try:
         url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
         payload = {"number": data.chat_id, "text": data.text, "delay": 1200}
-        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        response = requests.post(url, json=payload, headers=headers, timeout=5)
         return {"status": "success", "response": response.json()}
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -754,7 +756,7 @@ def mass_dispatch(data: MassModel):
         for num in data.numbers:
             url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
             payload = {"number": num, "text": data.text, "delay": 1200}
-            requests.post(url, json=payload, headers=headers, timeout=5)
+            requests.post(url, json=payload, headers=headers, timeout=3)
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
@@ -766,7 +768,7 @@ async def schedule_message(data: ScheduleModel):
         try:
             url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
             payload = {"number": data.chat_id, "text": data.text, "delay": 1200}
-            requests.post(url, json=payload, headers=headers, timeout=10)
+            requests.post(url, json=payload, headers=headers, timeout=5)
         except Exception as e:
             print(f"Erro agendamento: {e}")
     asyncio.create_task(delayed_task())
