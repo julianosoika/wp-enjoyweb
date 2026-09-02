@@ -58,7 +58,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v13 - Evolution API</title>
+    <title>WhatsApp GB Custom v14 - Evolution API</title>
     <style>
         :root {
             --bg-color: #0b141a;
@@ -85,6 +85,7 @@ HTML_TEMPLATE = """
         body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; transition: 0.3s; }
         .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; }
         @media(min-width: 500px) { .container { height: 92vh; border-radius: 12px; } }
+        
         .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; z-index: 5; }
         .header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
         .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; overflow: hidden; }
@@ -94,9 +95,15 @@ HTML_TEMPLATE = """
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
         .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
         
+        /* Menu Inferior Horizontal */
+        .bottom-nav { background: var(--header-bg); border-top: 1px solid var(--border-color); display: flex; overflow-x: auto; padding: 6px 4px; gap: 4px; z-index: 50; white-space: nowrap; }
+        .bottom-nav::-webkit-scrollbar { display: none; }
+        .nav-item { background: transparent; border: none; color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
+        .nav-item:hover, .nav-item.active { background: var(--accent-color); color: #fff; }
+
         .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .hidden { display: none !important; }
-        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); position: relative; padding-bottom: 70px; }
+        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); position: relative; padding-bottom: 20px; }
         .chat-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
         .chat-item:hover { background: var(--hover-item); }
         .chat-item-info { flex: 1; min-width: 0; }
@@ -104,7 +111,7 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 50; transition: transform 0.2s; }
+        .fab-btn { position: absolute; bottom: 65px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 50; transition: transform 0.2s; }
         .fab-btn:hover { transform: scale(1.08); }
 
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
@@ -121,6 +128,7 @@ HTML_TEMPLATE = """
         .chat-footer { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); }
         .chat-footer input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; color: var(--text-primary); outline: none; font-size: 14px; }
         .chat-footer button { background: var(--accent-color); border: none; color: #fff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: var(--container-bg); padding: 20px; border-radius: 12px; width: 92%; max-width: 420px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
         .modal-content h2 { color: var(--accent-color); margin-bottom: 14px; font-size: 17px; }
@@ -136,6 +144,7 @@ HTML_TEMPLATE = """
 </head>
 <body data-theme="dark-oled">
     <div class="container">
+        <!-- Cabeçalho -->
         <div class="header">
             <div class="header-left" id="header-left-content">
                 <div class="avatar" id="my-avatar">WA</div>
@@ -145,37 +154,47 @@ HTML_TEMPLATE = """
                 </div>
             </div>
             <div class="header-btns" id="header-buttons">
-                <button class="status-tab-btn" onclick="navigateTo('status')">Status 📸</button>
-                <button class="status-tab-btn" onclick="navigateTo('schedule')">Agendar ⏰</button>
                 <button class="mods-btn" onclick="openMods()">⚙️ Mods</button>
             </div>
         </div>
 
+        <!-- Telas / Seções -->
         <div id="home-view" class="view-section">
             <div class="chat-list-body" id="chat-list"></div>
             <button class="fab-btn" onclick="openContactsModal()" title="Nova Conversa">💬</button>
         </div>
 
-        <div id="chat-view" class="view-section hidden">
-            <div class="chat-body" id="chat-body"></div>
-            <div class="chat-footer">
-                <input type="text" id="message-input" placeholder="Digite uma mensagem..." onkeypress="handleKeyPress(event)">
-                <button onclick="sendMessage()">Enviar</button>
+        <div id="friends-view" class="view-section hidden">
+            <div class="chat-list-body" id="friends-list">
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando amigos/contatos...</div>
             </div>
         </div>
 
-        <div id="status-view" class="view-section hidden">
+        <div id="groups-view" class="view-section hidden">
+            <div class="chat-list-body" id="groups-list">
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando grupos...</div>
+            </div>
+        </div>
+
+        <div id="mass-view" class="view-section hidden">
             <div class="sub-body">
-                <h3 style="font-size: 15px; color: var(--accent-color); margin-bottom: 4px;">Status de Contatos (GB Downloader)</h3>
-                <div id="status-list-container">
-                    <p style="color: var(--text-secondary); text-align: center; margin-top: 20px;">Carregando status...</p>
+                <h3 style="font-size: 15px; color: var(--accent-color);">📢 Disparo em Massa</h3>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Lista de Números (um por linha ou separados por vírgula)</label>
+                    <textarea id="mass-numbers" rows="5" style="width:100%; background:var(--bg-color); border:1px solid var(--border-color); color:var(--text-primary); padding:8px; border-radius:6px;" placeholder="5543999999999&#10;5543888888888"></textarea>
                 </div>
+                <div class="form-group">
+                    <label>Mensagem do Disparo</label>
+                    <input type="text" id="mass-text" placeholder="Promoção imperdível hoje!">
+                </div>
+                <button class="download-btn" onclick="startMassDispatch()">Iniciar Disparo em Massa</button>
+                <div id="mass-status" style="margin-top: 10px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
 
         <div id="schedule-view" class="view-section hidden">
             <div class="sub-body">
-                <h3 style="font-size: 15px; color: var(--accent-color);">⏰ Agendador de Disparos</h3>
+                <h3 style="font-size: 15px; color: var(--accent-color);">⏰ Agendamento de Mensagem</h3>
                 <div class="form-group" style="margin-top: 10px;">
                     <label>Número do WhatsApp Destino (com DDI e DDD)</label>
                     <input type="text" id="sched-number" placeholder="Ex: 5543999999999">
@@ -192,9 +211,40 @@ HTML_TEMPLATE = """
                 <div id="sched-list" style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
+
+        <div id="radio-view" class="view-section hidden">
+            <div class="sub-body" style="align-items: center; justify-content: center; text-align: center;">
+                <h3 style="font-size: 18px; color: var(--accent-color); margin-bottom: 10px;">🎧 Web Rádio GB</h3>
+                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">Ouça sua rádio favorita enquanto gerencia suas mensagens.</p>
+                <audio controls style="width: 100%; max-width: 300px;">
+                    <object style="position:fixed;top:0px;left:0px;width:0px;height:0px;z-index:999999;" id="__gwt_historyFrame" src="javascript:false" tabIndex="-1">
+                    </object>
+                    <source src="https://ice.fabricahost.com.br/radiomaringa" type="audio/mpeg">
+                    Seu navegador não suporta áudio.
+                </audio>
+            </div>
+        </div>
+
+        <div id="chat-view" class="view-section hidden">
+            <div class="chat-body" id="chat-body"></div>
+            <div class="chat-footer">
+                <input type="text" id="message-input" placeholder="Digite uma mensagem..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">Enviar</button>
+            </div>
+        </div>
+
+        <!-- Menu Horizontal Inferior -->
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="switchTab('home', this)">🏠 Início</button>
+            <button class="nav-item" onclick="switchTab('friends', this)">👥 Amigos</button>
+            <button class="nav-item" onclick="switchTab('groups', this)">📢 Grupos</button>
+            <button class="nav-item" onclick="switchTab('mass', this)">🚀 Disparo Massa</button>
+            <button class="nav-item" onclick="switchTab('schedule', this)">⏰ Agendamento</button>
+            <button class="nav-item" onclick="switchTab('radio', this)">🎧 Web Rádio</button>
+        </div>
     </div>
 
-    <!-- Modal de Contatos com Busca -->
+    <!-- Modal de Contatos -->
     <div class="modal" id="contacts-modal">
         <div class="modal-content">
             <h2>👥 Iniciar Conversa com Contato</h2>
@@ -211,9 +261,10 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- Modal de Configurações (Mods) -->
     <div class="modal" id="mods-modal">
         <div class="modal-content">
-            <h2>⚙️ Painel GB Mods v13</h2>
+            <h2>⚙️ Painel GB Mods v14</h2>
             <div class="form-group">
                 <label>Tema Visual e Cores</label>
                 <select id="theme-select">
@@ -255,67 +306,53 @@ HTML_TEMPLATE = """
     <script>
         let currentChatId = null;
         let currentChatName = '';
-        let currentView = 'home';
+        let activeTabName = 'home';
         let allContactsCache = [];
 
-        function navigateTo(view) {
-            currentView = view;
-            document.getElementById('home-view').classList.add('hidden');
-            document.getElementById('chat-view').classList.add('hidden');
-            document.getElementById('status-view').classList.add('hidden');
-            document.getElementById('schedule-view').classList.add('hidden');
+        function switchTab(tab, btnElement) {
+            activeTabName = tab;
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            if(btnElement) btnElement.classList.add('active');
 
             const headerBtns = document.getElementById('header-buttons');
+            headerBtns.innerHTML = `<button class="mods-btn" onclick="openMods()">⚙️ Mods</button>`;
 
-            if (view === 'home') {
+            if (tab === 'home') {
                 document.getElementById('home-view').classList.remove('hidden');
-                loadProfileHeader();
-                headerBtns.innerHTML = `
-                    <button class="status-tab-btn" onclick="navigateTo('status')">Status 📸</button>
-                    <button class="status-tab-btn" onclick="navigateTo('schedule')">Agendar ⏰</button>
-                    <button class="mods-btn" onclick="openMods()">⚙️ Mods</button>`;
                 refreshData();
-            } else if (view === 'chat') {
-                document.getElementById('chat-view').classList.remove('hidden');
-                headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
-            } else if (view === 'status' || view === 'schedule') {
-                if (view === 'status') {
-                    document.getElementById('status-view').classList.remove('hidden');
-                    loadStatuses();
-                }
-                if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
-                
-                const headerLeft = document.getElementById('header-left-content');
-                headerLeft.innerHTML = `<div class="status-info"><h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3></div>`;
-                headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
+            } else if (tab === 'friends') {
+                document.getElementById('friends-view').classList.remove('hidden');
+                loadFriends();
+            } else if (tab === 'groups') {
+                document.getElementById('groups-view').classList.remove('hidden');
+                loadGroups();
+            } else if (tab === 'mass') {
+                document.getElementById('mass-view').classList.remove('hidden');
+            } else if (tab === 'schedule') {
+                document.getElementById('schedule-view').classList.remove('hidden');
+            } else if (tab === 'radio') {
+                document.getElementById('radio-view').classList.remove('hidden');
             }
         }
 
-        function loadStatuses() {
-            fetch('/get_statuses')
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('status-list-container');
-                    container.innerHTML = '';
-                    if (!data.statuses || data.statuses.length === 0) {
-                        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; margin-top: 20px;">Nenhum status recente encontrado na instância.</p>';
-                        return;
-                    }
-                    data.statuses.forEach(st => {
-                        let div = document.createElement('div');
-                        div.className = 'status-card';
-                        let imgTag = st.pic ? `<img src="${st.pic}" alt="Status">` : `<div class="avatar" style="width:50px;height:50px;">${st.name.substring(0,2)}</div>`;
-                        div.innerHTML = `
-                            ${imgTag}
-                            <div class="status-info-box">
-                                <h4>${st.name}</h4>
-                                <span>${st.caption || 'Atualização de status'}</span>
-                            </div>
-                            <button class="download-btn" onclick="alert('Status de ${st.name} carregado!')">Visualizar</button>
-                        `;
-                        container.appendChild(div);
-                    });
-                });
+        function openChatDirect(id, name, pic) {
+            currentChatId = id;
+            currentChatName = name;
+            let avatarHTML = pic ? `<img src="${pic}" alt="Avatar">` : name.substring(0,2).toUpperCase();
+            
+            document.getElementById('header-left-content').innerHTML = `
+                <div class="avatar">${avatarHTML}</div>
+                <div class="status-info">
+                    <h3>${name}</h3>
+                    <p>${id}</p>
+                </div>`;
+            
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById('chat-view').classList.remove('hidden');
+            document.getElementById('header-buttons').innerHTML = `<button class="back-btn" onclick="switchTab('${activeTabName}')">⬅️ Voltar</button>`;
+            loadMessages(id);
         }
 
         function loadProfileHeader() {
@@ -324,11 +361,10 @@ HTML_TEMPLATE = """
                 .then(data => {
                     const headerLeft = document.getElementById('header-left-content');
                     let avatarHTML = data.pic ? `<img src="${data.pic}" alt="Perfil">` : (data.name || "WA").substring(0,2).toUpperCase();
-                    
                     headerLeft.innerHTML = `
-                        <div class="avatar" id="my-avatar">${avatarHTML}</div>
+                        <div class="avatar">${avatarHTML}</div>
                         <div class="status-info">
-                            <h3 id="my-name">${data.name || "WhatsApp EnjoyWeb"}</h3>
+                            <h3>${data.name || "WhatsApp EnjoyWeb"}</h3>
                             <p>Online (Evolution API)</p>
                         </div>
                     `;
@@ -340,7 +376,7 @@ HTML_TEMPLATE = """
                 .then(res => res.json())
                 .then(data => {
                     document.body.setAttribute('data-theme', data.theme);
-                    if (currentView === 'home') {
+                    if (activeTabName === 'home') {
                         renderChatList(data.chats);
                     }
                 });
@@ -350,13 +386,18 @@ HTML_TEMPLATE = """
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (chats.length === 0) {
-                listContainer.innerHTML = '<div style="padding: 40px 20px; text-align: center; color: var(--text-secondary);"><p style="font-size:15px; margin-bottom:6px;">Nenhum chat recente.</p><p style="font-size:12px;">Clique no botão flutuante 💬 abaixo para buscar um contato e iniciar uma conversa.</p></div>';
+                listContainer.innerHTML = `
+                    <div style="padding: 30px 20px; text-align: center; color: var(--text-secondary);">
+                        <p style="font-size:15px; margin-bottom:8px;">Nenhum chat recente encontrado.</p>
+                        <p style="font-size:12px; margin-bottom:15px;">Use o botão 💬 abaixo ou vá na aba <b>Amigos</b> / <b>Grupos</b> para iniciar.</p>
+                        <button class="download-btn" onclick="switchTab('friends', document.querySelectorAll('.nav-item')[1])">Ver Meus Contatos</button>
+                    </div>`;
                 return;
             }
             chats.forEach(chat => {
                 let div = document.createElement('div');
                 div.className = 'chat-item';
-                div.onclick = () => openChat(chat.id, chat.name, chat.pic);
+                div.onclick = () => openChatDirect(chat.id, chat.name, chat.pic);
                 let avatarHTML = chat.pic ? `<img src="${chat.pic}" alt="Avatar">` : chat.name.substring(0,2).toUpperCase();
                 div.innerHTML = `
                     <div class="avatar">${avatarHTML}</div>
@@ -367,6 +408,62 @@ HTML_TEMPLATE = """
                 `;
                 listContainer.appendChild(div);
             });
+        }
+
+        function loadFriends() {
+            fetch('/get_contacts')
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('friends-list');
+                    container.innerHTML = '';
+                    const contacts = data.contacts || [];
+                    if(contacts.length === 0) {
+                        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum contato encontrado na agenda.</div>';
+                        return;
+                    }
+                    contacts.forEach(c => {
+                        let div = document.createElement('div');
+                        div.className = 'chat-item';
+                        div.onclick = () => openChatDirect(c.id, c.name, c.pic);
+                        let avatarHTML = c.pic ? `<img src="${c.pic}" alt="Avatar">` : c.name.substring(0,2).toUpperCase();
+                        div.innerHTML = `
+                            <div class="avatar">${avatarHTML}</div>
+                            <div class="chat-item-info">
+                                <h4>${c.name}</h4>
+                                <p>${c.id}</p>
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    });
+                });
+        }
+
+        function loadGroups() {
+            fetch('/get_groups')
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('groups-list');
+                    container.innerHTML = '';
+                    const groups = data.groups || [];
+                    if(groups.length === 0) {
+                        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum grupo encontrado nesta instância.</div>';
+                        return;
+                    }
+                    groups.forEach(g => {
+                        let div = document.createElement('div');
+                        div.className = 'chat-item';
+                        div.onclick = () => openChatDirect(g.id, g.name, g.pic);
+                        let avatarHTML = g.pic ? `<img src="${g.pic}" alt="Avatar">` : g.name.substring(0,2).toUpperCase();
+                        div.innerHTML = `
+                            <div class="avatar">${avatarHTML}</div>
+                            <div class="chat-item-info">
+                                <h4>${g.name}</h4>
+                                <p>${g.id}</p>
+                            </div>
+                        `;
+                        container.appendChild(div);
+                    });
+                });
         }
 
         function openContactsModal() {
@@ -380,15 +477,11 @@ HTML_TEMPLATE = """
                 });
         }
 
-        function closeContactsModal() {
-            document.getElementById('contacts-modal').style.display = 'none';
-        }
+        function closeContactsModal() { document.getElementById('contacts-modal').style.display = 'none'; }
 
         function filterContacts() {
             const query = document.getElementById('contact-search-input').value.toLowerCase();
-            const filtered = allContactsCache.filter(c => 
-                c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query)
-            );
+            const filtered = allContactsCache.filter(c => c.name.toLowerCase().includes(query) || c.id.toLowerCase().includes(query));
             renderContactModalList(filtered);
         }
 
@@ -402,10 +495,7 @@ HTML_TEMPLATE = """
             contacts.forEach(c => {
                 let div = document.createElement('div');
                 div.className = 'chat-item';
-                div.onclick = () => {
-                    closeContactsModal();
-                    openChat(c.id, c.name, c.pic);
-                };
+                div.onclick = () => { closeContactsModal(); openChatDirect(c.id, c.name, c.pic); };
                 let avatarHTML = c.pic ? `<img src="${c.pic}" alt="Avatar">` : c.name.substring(0,2).toUpperCase();
                 div.innerHTML = `
                     <div class="avatar">${avatarHTML}</div>
@@ -416,21 +506,6 @@ HTML_TEMPLATE = """
                 `;
                 container.appendChild(div);
             });
-        }
-
-        function openChat(id, name, pic) {
-            currentChatId = id;
-            currentChatName = name;
-            let avatarHTML = pic ? `<img src="${pic}" alt="Avatar">` : name.substring(0,2).toUpperCase();
-            
-            document.getElementById('header-left-content').innerHTML = `
-                <div class="avatar">${avatarHTML}</div>
-                <div class="status-info">
-                    <h3>${name}</h3>
-                    <p>${id}</p>
-                </div>`;
-            navigateTo('chat');
-            loadMessages(id);
         }
 
         function loadMessages(chatId) {
@@ -486,6 +561,23 @@ HTML_TEMPLATE = """
             });
         }
 
+        function startMassDispatch() {
+            const raw = document.getElementById('mass-numbers').value.trim();
+            const text = document.getElementById('mass-text').value.trim();
+            if(!raw || !text) return alert('Preencha os números e a mensagem!');
+            
+            const numbers = raw.split(/[\n,]+/).map(n => n.trim()).filter(n => n);
+            document.getElementById('mass-status').innerHTML = `Iniciando disparo para ${numbers.length} contatos...`;
+            
+            fetch('/mass_dispatch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ numbers: numbers, text: text })
+            }).then(res => res.json()).then(data => {
+                document.getElementById('mass-status').innerHTML = `✅ Disparo concluído com sucesso!`;
+            });
+        }
+
         function openMods() {
             fetch('/get_settings')
                 .then(res => res.json())
@@ -530,19 +622,16 @@ HTML_TEMPLATE = """
             });
         }
 
-        setInterval(() => {
-            if (currentView === 'home') {
-                refreshData();
-            } else if (currentView === 'chat' && currentChatId) {
-                loadMessages(currentChatId);
-            }
-        }, 5000);
-
-        navigateTo('home');
+        loadProfileHeader();
+        switchTab('home', document.querySelector('.nav-item'));
     </script>
 </body>
 </html>
 """
+
+class MassModel(BaseModel):
+    numbers: list
+    text: str
 
 @app.get("/", response_class=HTMLResponse)
 def index():
@@ -561,20 +650,16 @@ def get_profile():
             for inst in instances:
                 if inst.get("name") == INSTANCE_NAME or inst.get("instance", {}).get("instanceName") == INSTANCE_NAME:
                     profile = inst.get("profileName") or inst.get("ownerJid", "").split("@")[0]
-                    if profile:
-                        profile_name = profile
+                    if profile: profile_name = profile
                     profile_pic = inst.get("profilePictureUrl") or inst.get("profilePicUrl", "")
                     break
     except Exception as e:
         print(f"Erro ao buscar perfil: {e}")
-    
     return {"name": profile_name, "pic": profile_pic}
 
 @app.get("/get_chats")
 def get_chats():
     chats_dict = {}
-    
-    # 1. Busca os chats ativos oficiais da Evolution API (/chat/findChats)
     try:
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
@@ -587,108 +672,50 @@ def get_chats():
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
                 pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
                 last_message = c.get("lastMessage", {})
-                last_text = last_message.get("conversation") or last_message.get("text") or last_message.get("extendedTextMessage", {}).get("text") or "Conversa ativa"
-                
+                last_text = last_message.get("conversation") or last_message.get("text") or "Conversa ativa"
                 timestamp = last_message.get("messageTimestamp", 0)
-                time_str = ""
-                try:
-                    if timestamp:
-                        time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M")
-                except:
-                    pass
-
-                chats_dict[jid] = {
-                    "id": jid,
-                    "name": name,
-                    "last_msg": last_text,
-                    "pic": pic,
-                    "time": time_str
-                }
+                time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
+                chats_dict[jid] = {"id": jid, "name": name, "last_msg": last_text, "pic": pic, "time": time_str}
     except Exception as e:
-        print(f"Erro ao buscar chats: {e}")
+        print(f"Erro chats: {e}")
 
-    # 2. Busca também todos os Grupos da instância para incluir junto
-    try:
-        url_groups = f"{EVOLUTION_URL}/group/fetchAllGroups/{INSTANCE_NAME}?getParticipants=false"
-        res_g = requests.get(url_groups, headers=headers, timeout=5)
-        if res_g.status_code == 200:
-            g_data = res_g.json()
-            groups_list = g_data if isinstance(g_data, list) else (g_data.get("groups") or [])
-            for g in groups_list:
-                jid = g.get("id") or g.get("Jid", "")
-                if not jid: continue
-                name = g.get("subject") or g.get("name") or "Grupo WhatsApp"
-                pic = g.get("pictureUrl") or g.get("profilePictureUrl", "")
-                
-                if jid not in chats_dict:
-                    chats_dict[jid] = {
-                        "id": jid,
-                        "name": name,
-                        "last_msg": "Grupo do WhatsApp",
-                        "pic": pic,
-                        "time": ""
-                    }
-    except Exception as e:
-        print(f"Erro ao buscar grupos: {e}")
-
-    final_chats = list(chats_dict.values())
-    return {
-        "chats": final_chats,
-        "theme": gb_settings["theme"]
-    }
-
-@app.get("/get_statuses")
-def get_statuses():
-    statuses_list = []
-    try:
-        url = f"{EVOLUTION_URL}/chat/findStatus/{INSTANCE_NAME}"
-        response = requests.get(url, headers=headers, timeout=5)
-        if response.status_code == 200:
-            data = response.json()
-            items = data if isinstance(data, list) else (data.get("status") or data.get("statuses") or [])
-            for s in items:
-                name = s.get("name") or s.get("pushName") or "Contato"
-                pic = s.get("profilePictureUrl") or s.get("pictureUrl", "")
-                caption = s.get("caption") or s.get("text") or "Atualização de status"
-                statuses_list.append({
-                    "name": name,
-                    "pic": pic,
-                    "caption": caption
-                })
-    except Exception as e:
-        print(f"Erro ao buscar status reais: {e}")
-
-    if not statuses_list:
-        statuses_list.append({
-            "name": "Nenhum status recente na API",
-            "pic": "",
-            "caption": "Aguardando novas postagens de status"
-        })
-
-    return {"statuses": statuses_list}
+    return {"chats": list(chats_dict.values()), "theme": gb_settings["theme"]}
 
 @app.get("/get_contacts")
 def get_contacts():
     contacts_list = []
     try:
-        url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
-        res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
-        if res_c.status_code == 200:
-            c_data = res_c.json()
-            c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
-            for c in c_items:
+        url = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
+        res = requests.post(url, json={}, headers=headers, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            items = data if isinstance(data, list) else data.get("contacts", [])
+            for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
                 pic = c.get("profilePictureUrl", "")
-                contacts_list.append({
-                    "id": jid,
-                    "name": name,
-                    "pic": pic
-                })
+                contacts_list.append({"id": jid, "name": name, "pic": pic})
     except Exception as e:
-        print(f"Erro ao buscar contatos: {e}")
-
+        print(f"Erro contatos: {e}")
     return {"contacts": contacts_list}
+
+@app.get("/get_groups")
+def get_groups():
+    groups_list = []
+    try:
+        url = f"{EVOLUTION_URL}/group/fetchAllGroups/{INSTANCE_NAME}?getParticipants=false"
+        res = requests.get(url, headers=headers, timeout=5)
+        if res.status_code == 200:
+            data = res.json()
+            items = data if isinstance(data, list) else (data.get("groups") or [])
+            for g in items:
+                jid = g.get("id") or g.get("Jid", "")
+                name = g.get("subject") or g.get("name", "Grupo WhatsApp")
+                pic = g.get("pictureUrl") or g.get("profilePictureUrl", "")
+                groups_list.append({"id": jid, "name": name, "pic": pic})
+    except Exception as e:
+        print(f"Erro grupos: {e}")
+    return {"groups": groups_list}
 
 @app.get("/get_messages")
 def get_messages(chat_id: str):
@@ -699,48 +726,36 @@ def get_messages(chat_id: str):
         response = requests.post(url, json=payload, headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
-            messages_data = []
-            if isinstance(data, list):
-                messages_data = data
-            elif isinstance(data, dict):
-                messages_data = data.get("messages", {}).get("records", []) or data.get("messages", []) or data.get("records", [])
-            
+            messages_data = data if isinstance(data, list) else (data.get("messages", {}).get("records", []) or data.get("messages", []) or [])
             for m in messages_data:
                 msg_obj = m.get("message", {})
-                body = (
-                    msg_obj.get("conversation") or 
-                    msg_obj.get("extendedTextMessage", {}).get("text") or 
-                    msg_obj.get("imageMessage", {}).get("caption") or 
-                    "[Mídia/Mensagem]"
-                )
+                body = msg_obj.get("conversation") or msg_obj.get("extendedTextMessage", {}).get("text") or "[Mídia]"
                 from_me = m.get("key", {}).get("fromMe", False)
                 timestamp = m.get("messageTimestamp", 0)
-                try:
-                    time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
-                except:
-                    time_str = ""
-                
-                msgs.append({
-                    "text": str(body),
-                    "is_me": from_me,
-                    "time": time_str
-                })
+                time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
+                msgs.append({"text": str(body), "is_me": from_me, "time": time_str})
     except Exception as e:
-        print(f"Erro ao buscar mensagens: {e}")
-
+        print(f"Erro msgs: {e}")
     return {"messages": msgs}
 
 @app.post("/send_message")
 def send_message(data: MessageModel):
     try:
         url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
-        payload = {
-            "number": data.chat_id,
-            "text": data.text,
-            "delay": 1200
-        }
+        payload = {"number": data.chat_id, "text": data.text, "delay": 1200}
         response = requests.post(url, json=payload, headers=headers, timeout=10)
         return {"status": "success", "response": response.json()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/mass_dispatch")
+def mass_dispatch(data: MassModel):
+    try:
+        for num in data.numbers:
+            url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
+            payload = {"number": num, "text": data.text, "delay": 1200}
+            requests.post(url, json=payload, headers=headers, timeout=5)
+        return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -750,17 +765,12 @@ async def schedule_message(data: ScheduleModel):
         await asyncio.sleep(data.delay_seconds)
         try:
             url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
-            payload = {
-                "number": data.chat_id,
-                "text": data.text,
-                "delay": 1200
-            }
+            payload = {"number": data.chat_id, "text": data.text, "delay": 1200}
             requests.post(url, json=payload, headers=headers, timeout=10)
         except Exception as e:
-            print(f"Erro no agendamento: {e}")
-    
+            print(f"Erro agendamento: {e}")
     asyncio.create_task(delayed_task())
-    return {"status": f"Mensagem agendada com sucesso para daqui a {data.delay_seconds} segundos!"}
+    return {"status": f"Mensagem agendada para daqui a {data.delay_seconds} segundos!"}
 
 @app.get("/get_settings")
 def get_settings():
