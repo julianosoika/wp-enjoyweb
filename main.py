@@ -570,24 +570,12 @@ def get_profile():
     
     return {"name": profile_name, "pic": profile_pic}
 
-def fetch_profile_pic(jid: str) -> str:
-    """Busca a foto de perfil individual se a Evolution permitir"""
-    try:
-        url = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
-        response = requests.post(url, json={"number": jid}, headers=headers, timeout=3)
-        if response.status_code == 200:
-            res_data = response.json()
-            return res_data.get("profilePictureUrl") or res_data.get("pictureUrl") or ""
-    except:
-        pass
-    return ""
-
 @app.get("/get_chats")
 def get_chats():
     chats_dict = {}
     
+    # 1. Primeiro, tenta buscar os chats oficiais salvos na Evolution
     try:
-        # 1. Tenta buscar os chats salvos via cache/histórico da Evolution (v2)
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
@@ -619,8 +607,8 @@ def get_chats():
     except Exception as e:
         print(f"Erro ao buscar chats: {e}")
 
+    # 2. Busca também os Grupos da instância para incluir junto
     try:
-        # 2. Busca também os Grupos da instância para incluir na aba principal
         url_groups = f"{EVOLUTION_URL}/group/fetchAllGroups/{INSTANCE_NAME}?getParticipants=false"
         res_g = requests.get(url_groups, headers=headers, timeout=5)
         if res_g.status_code == 200:
@@ -643,30 +631,34 @@ def get_chats():
     except Exception as e:
         print(f"Erro ao buscar grupos: {e}")
 
-    # 3. Fallback: Se ainda vier vazio, busca os contatos para preencher
-    if not chats_dict:
-        try:
-            url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
-            res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
-            if res_c.status_code == 200:
-                c_data = res_c.json()
-                c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
-                for c in c_items:
-                    jid = c.get("id") or c.get("remoteJid", "")
-                    if not jid: continue
-                    name = c.get("name") or c.get("pushName") or jid.split("@")[0]
-                    pic = c.get("profilePictureUrl", "")
+    # 3. Força também a inclusão dos Contatos/Conversas recentes para garantir que nenhuma conversa ativa fique de fora
+    try:
+        url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
+        res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
+        if res_c.status_code == 200:
+            c_data = res_c.json()
+            c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
+            for c in c_items:
+                jid = c.get("id") or c.get("remoteJid", "")
+                if not jid or "@g.us" in jid: continue # Foca em contatos individuais
+                name = c.get("name") or c.get("pushName") or jid.split("@")[0]
+                pic = c.get("profilePictureUrl", "")
+                
+                # Se o contato já existe, atualiza caso não tenha foto; se não existe, adiciona na lista de chats
+                if jid in chats_dict:
+                    if not chats_dict[jid]["pic"] and pic:
+                        chats_dict[jid]["pic"] = pic
+                else:
                     chats_dict[jid] = {
                         "id": jid,
                         "name": name,
-                        "last_msg": "Toque para ver mensagens",
+                        "last_msg": "Conversa recente",
                         "pic": pic,
                         "time": ""
                     }
-        except Exception as e:
-            print(f"Erro ao buscar contatos fallback: {e}")
+    except Exception as e:
+        print(f"Erro ao buscar contatos para chats: {e}")
 
-    # Garante que as fotos vazias tentem ser buscadas individualmente se necessário ou retornadas limpas
     final_chats = list(chats_dict.values())
     return {
         "chats": final_chats,
