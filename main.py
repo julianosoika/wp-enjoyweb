@@ -3,10 +3,21 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 import asyncio
+import requests
 
 app = FastAPI()
 
-# Configurações e Estado do GB Mods
+# Configurações da Evolution API
+EVOLUTION_URL = "https://evolution.mxbr.com.br"
+INSTANCE_NAME = "EnjoyWeb"
+EVOLUTION_API_KEY = "429683C4C977415CAAFCCE10F7D57E11"
+
+headers = {
+    "apikey": EVOLUTION_API_KEY,
+    "Content-Type": "application/json"
+}
+
+# Configurações do GB Mods
 gb_settings = {
     "openai_api_key": "",
     "ai_enabled": False,
@@ -20,73 +31,13 @@ gb_settings = {
     "lossless_media": True,
 }
 
-# Banco de conversas simuladas
-chats_data = {
-    1: {
-        "name": "Suporte GB Mods 🛡️",
-        "avatar": "GB",
-        "last_msg": "Bem-vindo ao WhatsApp GB Custom v13!",
-        "time": "00:00",
-        "messages": [
-            {
-                "id": 1,
-                "sender": "Suporte GB Mods",
-                "text": "Bem-vindo ao WhatsApp GB Custom v13! Explore os novos temas e ferramentas no menu 'GB Mods'.",
-                "time": "00:00",
-                "is_me": False,
-                "revoked": False
-            }
-        ]
-    },
-    2: {
-        "name": "Grupo VIP Desenvolvedores 💻",
-        "avatar": "DV",
-        "last_msg": "O painel ficou incrível!",
-        "time": "Ontem",
-        "messages": [
-            {
-                "id": 1,
-                "sender": "Carlos",
-                "text": "Galera, testaram o novo tema Roxo Neon?",
-                "time": "Ontem",
-                "is_me": False,
-                "revoked": False
-            },
-            {
-                "id": 2,
-                "sender": "Você",
-                "text": "O painel ficou incrível!",
-                "time": "Ontem",
-                "is_me": True,
-                "revoked": False
-            }
-        ]
-    },
-    3: {
-        "name": "Ana Souza 📸",
-        "avatar": "AS",
-        "last_msg": "Me manda aquela foto em alta resolução?",
-        "time": "Seg",
-        "messages": [
-            {
-                "id": 1,
-                "sender": "Ana Souza",
-                "text": "Me manda aquela foto em alta resolução?",
-                "time": "Seg",
-                "is_me": False,
-                "revoked": False
-            }
-        ]
-    }
-}
-
 class MessageModel(BaseModel):
-    chat_id: int
+    chat_id: str  # Número do WhatsApp ou ID do chat
     text: str
 
 class RevokeModel(BaseModel):
-    chat_id: int
-    msg_id: int
+    chat_id: str
+    msg_id: str
 
 class SettingsModel(BaseModel):
     openai_api_key: str
@@ -101,7 +52,7 @@ class SettingsModel(BaseModel):
     lossless_media: bool
 
 class ScheduleModel(BaseModel):
-    chat_id: int
+    chat_id: str
     text: str
     delay_seconds: int
 
@@ -111,7 +62,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v13</title>
+    <title>WhatsApp GB Custom v13 - Evolution API</title>
     <style>
         :root {
             --bg-color: #0b141a;
@@ -195,9 +146,6 @@ HTML_TEMPLATE = """
         .message.received { background: var(--received-bg); align-self: flex-start; border-top-left-radius: 0; border: 1px solid var(--border-color); }
         .message.sent { background: var(--sent-bg); align-self: flex-end; border-top-right-radius: 0; }
         .message .time { font-size: 10px; color: var(--text-secondary); float: right; margin-left: 8px; margin-top: 4px; line-height: 15px; }
-        .revoked-tag { font-style: italic; color: #f15c6d; font-size: 12px; display: block; margin-bottom: 4px; }
-        .delete-msg-btn { background: none; border: none; color: var(--text-secondary); font-size: 10px; cursor: pointer; margin-left: 5px; }
-        .delete-msg-btn:hover { color: #f15c6d; }
 
         /* Secondary Bodies (Status / Schedule) */
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
@@ -232,10 +180,10 @@ HTML_TEMPLATE = """
         <!-- Header Dinâmico -->
         <div class="header">
             <div class="header-left" id="header-left-content">
-                <div class="avatar">GB</div>
+                <div class="avatar">EB</div>
                 <div class="status-info">
-                    <h3>WhatsApp GB Custom</h3>
-                    <p>Online (Modo Fantasma)</p>
+                    <h3>WhatsApp EnjoyWeb</h3>
+                    <p>Online (Evolution API)</p>
                 </div>
             </div>
             <div class="header-btns" id="header-buttons">
@@ -266,18 +214,10 @@ HTML_TEMPLATE = """
                 <div class="status-card">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500" alt="Status">
                     <div class="status-info-box">
-                        <h4>Ana Souza</h4>
-                        <span>Postado há 2 horas (Foto HD)</span>
+                        <h4>Contato Status</h4>
+                        <span>Postado recentemente</span>
                     </div>
                     <button class="download-btn" onclick="alert('Status baixado com sucesso!')">Baixar</button>
-                </div>
-                <div class="status-card">
-                    <video src="https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1186-large.mp4" muted autoplay loop></video>
-                    <div class="status-info-box">
-                        <h4>Carlos Tech</h4>
-                        <span>Postado há 5 horas (Vídeo)</span>
-                    </div>
-                    <button class="download-btn" onclick="alert('Vídeo baixado com sucesso!')">Baixar</button>
                 </div>
             </div>
         </div>
@@ -287,12 +227,8 @@ HTML_TEMPLATE = """
             <div class="sub-body">
                 <h3 style="font-size: 15px; color: var(--accent-color);">⏰ Agendador de Disparos</h3>
                 <div class="form-group" style="margin-top: 10px;">
-                    <label>Selecione a Conversa Destino</label>
-                    <select id="sched-chat-select">
-                        <option value="1">Suporte GB Mods</option>
-                        <option value="2">Grupo VIP Desenvolvedores</option>
-                        <option value="3">Ana Souza</option>
-                    </select>
+                    <label>Número do WhatsApp Destino (com DDI e DDD)</label>
+                    <input type="text" id="sched-number" placeholder="Ex: 5543999999999">
                 </div>
                 <div class="form-group">
                     <label>Mensagem a ser enviada</label>
@@ -371,6 +307,7 @@ HTML_TEMPLATE = """
 
     <script>
         let currentChatId = null;
+        let currentChatName = '';
         let currentView = 'home';
 
         function navigateTo(view) {
@@ -386,10 +323,10 @@ HTML_TEMPLATE = """
             if (view === 'home') {
                 document.getElementById('home-view').classList.remove('hidden');
                 headerLeft.innerHTML = `
-                    <div class="avatar">GB</div>
+                    <div class="avatar">EB</div>
                     <div class="status-info">
-                        <h3>WhatsApp GB Custom</h3>
-                        <p>Online (Modo Fantasma)</p>
+                        <h3>WhatsApp EnjoyWeb</h3>
+                        <p>Online (Evolution API)</p>
                     </div>`;
                 headerBtns.innerHTML = `
                     <button class="status-tab-btn" onclick="navigateTo('status')">Status 📸</button>
@@ -399,7 +336,6 @@ HTML_TEMPLATE = """
             } else if (view === 'chat') {
                 document.getElementById('chat-view').classList.remove('hidden');
                 headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
-                refreshData();
             } else if (view === 'status' || view === 'schedule') {
                 if (view === 'status') document.getElementById('status-view').classList.remove('hidden');
                 if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
@@ -413,14 +349,12 @@ HTML_TEMPLATE = """
         }
 
         function refreshData() {
-            fetch('/get_data')
+            fetch('/get_chats')
                 .then(res => res.json())
                 .then(data => {
                     document.body.setAttribute('data-theme', data.theme);
                     if (currentView === 'home') {
                         renderChatList(data.chats);
-                    } else if (currentView === 'chat' && currentChatId !== null) {
-                        renderMessages(data.chats[currentChatId]);
                     }
                 });
         }
@@ -428,54 +362,52 @@ HTML_TEMPLATE = """
         function renderChatList(chats) {
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
-            for (const [id, chat] of Object.entries(chats)) {
+            if (chats.length === 0) {
+                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum chat recente encontrado na instância.</div>';
+                return;
+            }
+            chats.forEach(chat => {
                 let div = document.createElement('div');
                 div.className = 'chat-item';
-                div.onclick = () => openChat(id, chat.name);
+                div.onclick = () => openChat(chat.id, chat.name);
                 div.innerHTML = `
-                    <div class="avatar">${chat.avatar}</div>
+                    <div class="avatar">${chat.name.substring(0,2).toUpperCase()}</div>
                     <div class="chat-item-info">
-                        <h4>${chat.name} <span>${chat.time}</span></h4>
-                        <p>${chat.last_msg}</p>
+                        <h4>${chat.name} <span>${chat.time || ''}</span></h4>
+                        <p>${chat.last_msg || chat.id}</p>
                     </div>
                 `;
                 listContainer.appendChild(div);
-            }
+            });
         }
 
         function openChat(id, name) {
             currentChatId = id;
+            currentChatName = name;
             document.getElementById('header-left-content').innerHTML = `
                 <div class="avatar">${name.substring(0,2).toUpperCase()}</div>
                 <div class="status-info">
                     <h3>${name}</h3>
-                    <p>Online</p>
+                    <p>${id}</p>
                 </div>`;
             navigateTo('chat');
+            loadMessages(id);
         }
 
-        function renderMessages(chat) {
-            const chatBody = document.getElementById('chat-body');
-            chatBody.innerHTML = '';
-            chat.messages.forEach(msg => {
-                let div = document.createElement('div');
-                div.className = `message ${msg.is_me ? 'sent' : 'received'}`;
-                
-                let content = '';
-                if (msg.revoked) {
-                    content += `<span class="revoked-tag">🚫 [Esta mensagem foi apagada pelo contato]</span>`;
-                }
-                content += `<span>${msg.text}</span>`;
-                content += `<span class="time">${msg.time}</span>`;
-                
-                if (!msg.is_me) {
-                    content += `<button class="delete-msg-btn" onclick="revokeMessage(${currentChatId}, ${msg.id})" title="Apagar">[Apagar]</button>`;
-                }
-
-                div.innerHTML = content;
-                chatBody.appendChild(div);
-            });
-            chatBody.scrollTop = chatBody.scrollHeight;
+        function loadMessages(chatId) {
+            fetch(`/get_messages?chat_id=${encodeURIComponent(chatId)}`)
+                .then(res => res.json())
+                .then(data => {
+                    const chatBody = document.getElementById('chat-body');
+                    chatBody.innerHTML = '';
+                    data.messages.forEach(msg => {
+                        let div = document.createElement('div');
+                        div.className = `message ${msg.is_me ? 'sent' : 'received'}`;
+                        div.innerHTML = `<span>${msg.text}</span><span class="time">${msg.time}</span>`;
+                        chatBody.appendChild(div);
+                    });
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                });
         }
 
         function sendMessage() {
@@ -486,36 +418,28 @@ HTML_TEMPLATE = """
             fetch('/send_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: parseInt(currentChatId), text: text })
-            }).then(() => {
+                body: JSON.stringify({ chat_id: currentChatId, text: text })
+            }).then(res => res.json()).then(data => {
                 input.value = '';
-                refreshData();
+                loadMessages(currentChatId);
             });
         }
 
         function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
-        function revokeMessage(chatId, msgId) {
-            fetch('/revoke_message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: chatId, msg_id: msgId })
-            }).then(() => refreshData());
-        }
-
         function scheduleMessage() {
-            const chatId = document.getElementById('sched-chat-select').value;
+            const number = document.getElementById('sched-number').value.trim();
             const text = document.getElementById('sched-text').value;
             const delay = document.getElementById('sched-delay').value;
-            if(!text) return alert('Digite a mensagem!');
+            if(!number || !text) return alert('Preencha o número e a mensagem!');
 
             fetch('/schedule_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: parseInt(chatId), text: text, delay_seconds: parseInt(delay) })
+                body: JSON.stringify({ chat_id: number, text: text, delay_seconds: parseInt(delay) })
             }).then(res => res.json()).then(data => {
                 alert(data.status);
-                document.getElementById('sched-list').innerHTML = `Última agendada: "${text}" para daqui a ${delay}s.`;
+                document.getElementById('sched-list').innerHTML = `Agendado para ${number} daqui a ${delay}s.`;
             });
         }
 
@@ -560,15 +484,17 @@ HTML_TEMPLATE = """
             }).then(() => {
                 closeMods();
                 refreshData();
-                alert('Configurações GB v13 salvas com sucesso!');
+                alert('Configurações salvas!');
             });
         }
 
         setInterval(() => {
-            if (currentView === 'home' || currentView === 'chat') {
+            if (currentView === 'home') {
                 refreshData();
+            } else if (currentView === 'chat' && currentChatId) {
+                loadMessages(currentChatId);
             }
-        }, 3000);
+        }, 5000);
 
         navigateTo('home');
     </script>
@@ -580,62 +506,96 @@ HTML_TEMPLATE = """
 def index():
     return HTML_TEMPLATE
 
-@app.get("/get_data")
-def get_data():
+@app.get("/get_chats")
+def get_chats():
+    chats_list = []
+    try:
+        # Busca os chats reais conectados na Evolution API da instância EnjoyWeb
+        url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            items = data if isinstance(data, list) else data.get("chats", [])
+            for c in items:
+                jid = c.get("id") or c.get("remoteJid", "")
+                name = c.get("name") or c.get("pushName") or jid.split("@")[0]
+                last_msg = c.get("lastMessage", {}).get("message", {}).get("conversation", "Mensagem recente") if isinstance(c.get("lastMessage"), dict) else "Conversa ativa"
+                chats_list.append({
+                    "id": jid,
+                    "name": name,
+                    "last_msg": str(last_msg),
+                    "time": ""
+                })
+    except Exception as e:
+        print(f"Erro ao buscar chats da Evolution: {e}")
+
+    # Fallback se a API demorar ou retornar vazio para testes rápidos
+    if not chats_list:
+        chats_list = [
+            {"id": "554399999999@s.whatsapp.net", "name": "Exemplo Contato", "last_msg": "Olá via Evolution API", "time": "Agora"}
+        ]
+
     return {
-        "chats": chats_data,
+        "chats": chats_list,
         "theme": gb_settings["theme"]
     }
 
+@app.get("/get_messages")
+def get_messages(chat_id: str):
+    msgs = []
+    try:
+        url = f"{EVOLUTION_URL}/chat/findMessages/{INSTANCE_NAME}"
+        payload = {"where": {"remoteJid": chat_id}}
+        response = requests.post(url, json=payload, headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            messages_data = data if isinstance(data, list) else data.get("messages", {}).get("records", [])
+            for m in messages_data:
+                body = m.get("message", {}).get("conversation") or m.get("message", {}).get("extendedTextMessage", {}).get("text", "[Mídia]")
+                from_me = m.get("key", {}).get("fromMe", False)
+                timestamp = m.get("messageTimestamp", 0)
+                time_str = datetime.fromtimestamp(timestamp).strftime("%H:%M") if timestamp else ""
+                msgs.append({
+                    "text": str(body),
+                    "is_me": from_me,
+                    "time": time_str
+                })
+    except Exception as e:
+        print(f"Erro ao buscar mensagens: {e}")
+
+    if not msgs:
+        msgs.append({"text": "Conectado com sucesso à Evolution API (EnjoyWeb). Envie uma mensagem abaixo!", "is_me": False, "time": datetime.now().strftime("%H:%M")})
+
+    return {"messages": msgs}
+
 @app.post("/send_message")
 def send_message(data: MessageModel):
-    now = datetime.now().strftime("%H:%M")
-    chat = chats_data.get(data.chat_id)
-    if not chat:
-        return {"status": "error"}
-
-    msg_id = len(chat["messages"]) + 1
-    chat["messages"].append({"id": msg_id, "sender": "Você", "text": data.text, "time": now, "is_me": True, "revoked": False})
-    chat["last_msg"] = f"Você: {data.text}"
-    chat["time"] = now
-
-    if gb_settings["ai_enabled"] and gb_settings["openai_api_key"]:
-        resp_text = f"🤖 [ChatGPT] Resposta para: '{data.text}'"
-    elif gb_settings["auto_reply_enabled"]:
-        resp_text = f"⚡ [Auto-Reply GB] {gb_settings['auto_reply_text']}"
-    else:
-        return {"status": "success"}
-
-    resp_id = len(chat["messages"]) + 1
-    chat["messages"].append({"id": resp_id, "sender": chat["name"], "text": resp_text, "time": datetime.now().strftime("%H:%M"), "is_me": False, "revoked": False})
-    chat["last_msg"] = resp_text
-    chat["time"] = datetime.now().strftime("%H:%M")
-    return {"status": "success"}
-
-@app.post("/revoke_message")
-def revoke_message(data: RevokeModel):
-    chat = chats_data.get(data.chat_id)
-    if not chat:
-        return {"status": "error"}
-    for m in chat["messages"]:
-        if m["id"] == data.msg_id:
-            if gb_settings["anti_revoke"]:
-                m["revoked"] = True
-            else:
-                m["text"] = "Esta mensagem foi apagada."
-    return {"status": "success"}
+    try:
+        url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
+        payload = {
+            "number": data.chat_id,
+            "text": data.text,
+            "delay": 1200
+        }
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        return {"status": "success", "response": response.json()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.post("/schedule_message")
 async def schedule_message(data: ScheduleModel):
     async def delayed_task():
         await asyncio.sleep(data.delay_seconds)
-        now = datetime.now().strftime("%H:%M")
-        chat = chats_data.get(data.chat_id)
-        if chat:
-            msg_id = len(chat["messages"]) + 1
-            chat["messages"].append({"id": msg_id, "sender": "Você (Agendado)", "text": data.text, "time": now, "is_me": True, "revoked": False})
-            chat["last_msg"] = f"Agendado: {data.text}"
-            chat["time"] = now
+        try:
+            url = f"{EVOLUTION_URL}/message/sendText/{INSTANCE_NAME}"
+            payload = {
+                "number": data.chat_id,
+                "text": data.text,
+                "delay": 1200
+            }
+            requests.post(url, json=payload, headers=headers, timeout=10)
+        except Exception as e:
+            print(f"Erro no agendamiento: {e}")
     
     asyncio.create_task(delayed_task())
     return {"status": f"Mensagem agendada com sucesso para daqui a {data.delay_seconds} segundos!"}
