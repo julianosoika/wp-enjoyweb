@@ -70,37 +70,31 @@ HTML_TEMPLATE = """
             --accent-color: #00a884;
             --hover-item: #2a3942;
         }
-        [data-theme="midnight-blue"] {
-            --bg-color: #050b14; --container-bg: #0d1b2a; --header-bg: #1b263b; --border-color: #415a77; --sent-bg: #1d3557; --received-bg: #1b263b; --accent-color: #457b9d; --hover-item: #1b263b;
-        }
-        [data-theme="neon-purple"] {
-            --bg-color: #0f051d; --container-bg: #1a0b2e; --header-bg: #2b124c; --border-color: #4d1c8c; --sent-bg: #6b21a8; --received-bg: #2b124c; --accent-color: #a855f7; --hover-item: #3b1868;
-        }
         [data-theme="light"] {
             --bg-color: #eae6df; --container-bg: #ffffff; --header-bg: #00a884; --border-color: #d1d7db; --text-primary: #111b21; --text-secondary: #667781; --sent-bg: #d9fdd3; --received-bg: #ffffff; --accent-color: #00a884; --hover-item: #f5f6f6;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; z-index: 1; }
+        .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; }
         @media(min-width: 500px) { .container { height: 92vh; border-radius: 12px; } }
         
-        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; z-index: 5; }
+        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; }
         .header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
         .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .status-info h3 { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-info p { font-size: 11px; color: var(--text-secondary); }
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
-        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; z-index: 10; position: relative; }
+        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
         
-        .bottom-nav { background: var(--header-bg); border-top: 1px solid var(--border-color); display: flex; overflow-x: auto; padding: 6px 4px; gap: 4px; z-index: 50; white-space: nowrap; }
+        .bottom-nav { background: var(--header-bg); border-top: 1px solid var(--border-color); display: flex; overflow-x: auto; padding: 6px 4px; gap: 4px; white-space: nowrap; }
         .bottom-nav::-webkit-scrollbar { display: none; }
         .nav-item { background: transparent; border: none; color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .nav-item:hover, .nav-item.active { background: var(--accent-color); color: #fff; }
 
-        .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 2; }
+        .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .hidden { display: none !important; }
-        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); position: relative; padding-bottom: 20px; z-index: 3; }
+        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); padding-bottom: 20px; }
         .chat-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
         .chat-item:hover { background: var(--hover-item); }
         .chat-item-info { flex: 1; min-width: 0; }
@@ -108,16 +102,17 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 60; transition: transform 0.2s; }
-        .fab-btn:hover { transform: scale(1.08); }
-
-        .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
-        .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; position: relative; font-size: 14px; word-break: break-word; color: var(--text-primary); }
-        .message.received { background: var(--received-bg); align-self: flex-start; border-top-left-radius: 0; border: 1px solid var(--border-color); }
-        .message.sent { background: var(--sent-bg); align-self: flex-end; border-top-right-radius: 0; }
-        .message .time { font-size: 10px; color: var(--text-secondary); float: right; margin-left: 8px; margin-top: 4px; line-height: 15px; }
+        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; }
+        
+        .chat-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; word-break: break-word; color: var(--text-primary); }
+        .message.received { background: var(--received-bg); align-self: flex-start; border: 1px solid var(--border-color); }
+        .message.sent { background: var(--sent-bg); align-self: flex-end; }
+        .message .time { font-size: 10px; color: var(--text-secondary); float: right; margin-left: 8px; margin-top: 4px; }
+        
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; z-index: 100; position: relative; pointer-events: auto; }
+        .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        
         .chat-footer { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); }
         .chat-footer input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; color: var(--text-primary); outline: none; font-size: 14px; }
         .chat-footer button { background: var(--accent-color); border: none; color: #fff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
@@ -137,7 +132,6 @@ HTML_TEMPLATE = """
 </head>
 <body data-theme="dark-oled">
     <div class="container">
-        <!-- Cabeçalho -->
         <div class="header">
             <div class="header-left" id="header-left-content">
                 <div class="avatar" id="my-avatar">WA</div>
@@ -151,21 +145,20 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
-        <!-- Telas / Seções -->
         <div id="home-view" class="view-section">
             <div class="chat-list-body" id="chat-list">
                 <div style="padding: 30px; text-align: center;">
                     <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Interface pronta e desbloqueada.</p>
-                    <button class="download-btn" id="btn-refresh" onclick="refreshData()" type="button">🔄 Carregar Conversas da API</button>
+                    <button class="download-btn" onclick="refreshData()" type="button">🔄 Carregar Conversas da API</button>
                 </div>
             </div>
-            <button class="fab-btn" onclick="openContactsModal()" type="button" title="Nova Conversa">💬</button>
+            <button class="fab-btn" onclick="openContactsModal()" type="button">💬</button>
         </div>
 
         <div id="friends-view" class="view-section hidden">
             <div class="chat-list-body" id="friends-list">
                 <div style="padding: 30px; text-align: center;">
-                    <button class="download-btn" id="btn-friends" onclick="loadFriends()" type="button">👥 Carregar Contatos</button>
+                    <button class="download-btn" onclick="loadFriends()" type="button">👥 Carregar Contatos</button>
                 </div>
             </div>
         </div>
@@ -173,7 +166,7 @@ HTML_TEMPLATE = """
         <div id="groups-view" class="view-section hidden">
             <div class="chat-list-body" id="groups-list">
                 <div style="padding: 30px; text-align: center;">
-                    <button class="download-btn" id="btn-groups" onclick="loadGroups()" type="button">📢 Carregar Grupos</button>
+                    <button class="download-btn" onclick="loadGroups()" type="button">📢 Carregar Grupos</button>
                 </div>
             </div>
         </div>
@@ -182,14 +175,14 @@ HTML_TEMPLATE = """
             <div class="sub-body">
                 <h3 style="font-size: 15px; color: var(--accent-color);">📢 Disparo em Massa</h3>
                 <div class="form-group" style="margin-top: 10px;">
-                    <label>Lista de Números (um por linha ou separados por vírgula)</label>
-                    <textarea id="mass-numbers" rows="5" style="width:100%; background:var(--bg-color); border:1px solid var(--border-color); color:var(--text-primary); padding:8px; border-radius:6px;" placeholder="5543999999999&#10;5543888888888"></textarea>
+                    <label>Lista de Números (um por linha)</label>
+                    <textarea id="mass-numbers" rows="5" style="width:100%; background:var(--bg-color); border:1px solid var(--border-color); color:var(--text-primary); padding:8px; border-radius:6px;"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Mensagem do Disparo</label>
-                    <input type="text" id="mass-text" placeholder="Promoção imperdível hoje!">
+                    <input type="text" id="mass-text">
                 </div>
-                <button class="download-btn" id="btn-mass" onclick="startMassDispatch()" type="button">Iniciar Disparo em Massa</button>
+                <button class="download-btn" onclick="startMassDispatch()" type="button">Iniciar Disparo em Massa</button>
                 <div id="mass-status" style="margin-top: 10px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
@@ -198,18 +191,18 @@ HTML_TEMPLATE = """
             <div class="sub-body">
                 <h3 style="font-size: 15px; color: var(--accent-color);">⏰ Agendamento de Mensagem</h3>
                 <div class="form-group" style="margin-top: 10px;">
-                    <label>Número do WhatsApp Destino (com DDI e DDD)</label>
-                    <input type="text" id="sched-number" placeholder="Ex: 5543999999999">
+                    <label>Número do WhatsApp Destino</label>
+                    <input type="text" id="sched-number" placeholder="5543999999999">
                 </div>
                 <div class="form-group">
-                    <label>Mensagem a ser enviada</label>
-                    <input type="text" id="sched-text" placeholder="Ex: Bom dia automático!">
+                    <label>Mensagem</label>
+                    <input type="text" id="sched-text">
                 </div>
                 <div class="form-group">
-                    <label>Disparar em quantos segundos?</label>
+                    <label>Atraso em segundos</label>
                     <input type="number" id="sched-delay" value="10">
                 </div>
-                <button class="download-btn" id="btn-sched" onclick="scheduleMessage()" type="button">Agendar Disparo</button>
+                <button class="download-btn" onclick="scheduleMessage()" type="button">Agendar Disparo</button>
                 <div id="sched-list" style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
@@ -217,10 +210,8 @@ HTML_TEMPLATE = """
         <div id="radio-view" class="view-section hidden">
             <div class="sub-body" style="align-items: center; justify-content: center; text-align: center;">
                 <h3 style="font-size: 18px; color: var(--accent-color); margin-bottom: 10px;">🎧 Web Rádio GB</h3>
-                <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 20px;">Ouça sua rádio favorita enquanto gerencia suas mensagens.</p>
                 <audio controls style="width: 100%; max-width: 300px;">
                     <source src="https://ice.fabricahost.com.br/radiomaringa" type="audio/mpeg">
-                    Seu navegador não suporta áudio.
                 </audio>
             </div>
         </div>
@@ -229,76 +220,57 @@ HTML_TEMPLATE = """
             <div class="chat-body" id="chat-body"></div>
             <div class="chat-footer">
                 <input type="text" id="message-input" placeholder="Digite uma mensagem...">
-                <button id="btn-send-msg" onclick="sendMessage()" type="button">Enviar</button>
+                <button onclick="sendMessage()" type="button">Enviar</button>
             </div>
         </div>
 
-        <!-- Menu Horizontal Inferior -->
         <div class="bottom-nav">
-            <button class="nav-item active" data-tab="home" onclick="switchTab('home', this)" type="button">🏠 Início</button>
-            <button class="nav-item" data-tab="friends" onclick="switchTab('friends', this)" type="button">👥 Amigos</button>
-            <button class="nav-item" data-tab="groups" onclick="switchTab('groups', this)" type="button">📢 Grupos</button>
-            <button class="nav-item" data-tab="mass" onclick="switchTab('mass', this)" type="button">🚀 Disparo Massa</button>
-            <button class="nav-item" data-tab="schedule" onclick="switchTab('schedule', this)" type="button">⏰ Agendamento</button>
-            <button class="nav-item" data-tab="radio" onclick="switchTab('radio', this)" type="button">🎧 Web Rádio</button>
+            <button class="nav-item active" onclick="switchTab('home', this)" type="button">🏠 Início</button>
+            <button class="nav-item" onclick="switchTab('friends', this)" type="button">👥 Amigos</button>
+            <button class="nav-item" onclick="switchTab('groups', this)" type="button">📢 Grupos</button>
+            <button class="nav-item" onclick="switchTab('mass', this)" type="button">🚀 Disparo</button>
+            <button class="nav-item" onclick="switchTab('schedule', this)" type="button">⏰ Agenda</button>
+            <button class="nav-item" onclick="switchTab('radio', this)" type="button">🎧 Rádio</button>
         </div>
     </div>
 
-    <!-- Modal de Contatos -->
     <div class="modal" id="contacts-modal">
         <div class="modal-content">
-            <h2>👥 Iniciar Conversa com Contato</h2>
+            <h2>👥 Iniciar Conversa</h2>
             <div class="form-group">
-                <label>Pesquisar nome ou número</label>
-                <input type="text" id="contact-search-input" oninput="filterContacts()" placeholder="Digite para buscar...">
+                <input type="text" id="contact-search-input" oninput="filterContacts()" placeholder="Pesquisar...">
             </div>
-            <div id="contacts-modal-list" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
-                <p style="text-align: center; color: var(--text-secondary);">Clique em carregar contatos...</p>
-            </div>
-            <div class="modal-buttons" style="margin-top: 14px;">
+            <div id="contacts-modal-list" style="max-height: 300px; overflow-y: auto;"></div>
+            <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeContactsModal()" type="button">Fechar</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal de Configurações (Mods) -->
     <div class="modal" id="mods-modal">
         <div class="modal-content">
-            <h2>⚙️ Painel GB Mods v14</h2>
+            <h2>⚙️ Painel GB Mods</h2>
             <div class="form-group">
-                <label>Tema Visual e Cores</label>
+                <label>Tema</label>
                 <select id="theme-select">
-                    <option value="dark-oled">Preto OLED (Padrão Dark)</option>
-                    <option value="midnight-blue">Azul Meia-Noite</option>
-                    <option value="neon-purple">Roxo Neon</option>
-                    <option value="light">Modo Claro Clássico</option>
+                    <option value="dark-oled">Preto OLED</option>
+                    <option value="light">Claro</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Chave da API OpenAI (ChatGPT)</label>
-                <input type="password" id="api-key" placeholder="sk-...">
+                <label>API OpenAI Key</label>
+                <input type="password" id="api-key">
             </div>
             <div class="form-group">
-                <label>Status da Inteligência Artificial</label>
+                <label>IA Status</label>
                 <select id="ai-status">
-                    <option value="false">Desativado (Modo Manual Puro)</option>
-                    <option value="true">Ativado (ChatGPT)</option>
+                    <option value="false">Desativado</option>
+                    <option value="true">Ativado</option>
                 </select>
             </div>
-            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 12px 0;">
-            <div class="form-group">
-                <label>Mensagem Automática de Ausência (Auto-Reply)</label>
-                <input type="text" id="auto-reply-text">
-            </div>
-            <label class="checkbox-group"><input type="checkbox" id="auto-reply-enabled"> 🤖 Ativar Resposta Automática</label>
-            <label class="checkbox-group"><input type="checkbox" id="lossless-media"> 📷 Enviar Mídia em Qualidade Máxima</label>
-            <label class="checkbox-group"><input type="checkbox" id="anti-revoke"> 🛡️ Anti-Revogação (Impedir apagar mensagens)</label>
-            <label class="checkbox-group"><input type="checkbox" id="freeze-last-seen"> ❄️ Congelar Visto por Último</label>
-            <label class="checkbox-group"><input type="checkbox" id="anti-blue-tick"> 👀 Ocultar Confirmação de Leitura</label>
-            <label class="checkbox-group"><input type="checkbox" id="ghost-mode"> 👻 Ocultar "Digitando..."</label>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeMods()" type="button">Cancelar</button>
-                <button class="btn-save" onclick="saveMods()" type="button">Salvar Alterações</button>
+                <button class="btn-save" onclick="saveMods()" type="button">Salvar</button>
             </div>
         </div>
     </div>
@@ -313,11 +285,9 @@ HTML_TEMPLATE = """
             activeTabName = tab;
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            
             if(btnElement) btnElement.classList.add('active');
 
-            const headerBtns = document.getElementById('header-buttons');
-            headerBtns.innerHTML = `<button class="mods-btn" onclick="openMods()" type="button">⚙️ Mods</button>`;
+            document.getElementById('header-buttons').innerHTML = '<button class="mods-btn" onclick="openMods()" type="button">⚙️ Mods</button>';
 
             if (tab === 'home') document.getElementById('home-view').classList.remove('hidden');
             else if (tab === 'friends') document.getElementById('friends-view').classList.remove('hidden');
@@ -330,130 +300,91 @@ HTML_TEMPLATE = """
         function openChatDirect(id, name, pic) {
             currentChatId = id;
             currentChatName = name;
-            let avatarHTML = pic ? `<img src="${pic}" alt="Avatar">` : name.substring(0,2).toUpperCase();
+            let avatarHTML = pic ? '<img src="' + pic + '" alt="Avatar">' : name.substring(0,2).toUpperCase();
             
             document.getElementById('header-left-content').innerHTML = `
-                <div class="avatar">${avatarHTML}</div>
+                <div class="avatar">` + avatarHTML + `</div>
                 <div class="status-info">
-                    <h3>${name}</h3>
-                    <p>${id}</p>
+                    <h3>` + name + `</h3>
+                    <p>` + id + `</p>
                 </div>`;
             
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('chat-view').classList.remove('hidden');
-            document.getElementById('header-buttons').innerHTML = `<button class="back-btn" type="button" onclick="switchTab('${activeTabName}')">⬅️ Voltar</button>`;
+            document.getElementById('header-buttons').innerHTML = '<button class="back-btn" onclick="switchTab(\\'' + activeTabName + '\\')" type="button">⬅️ Voltar</button>';
             loadMessages(id);
         }
 
         function refreshData() {
             const listContainer = document.getElementById('chat-list');
-            listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando conversas na API...</div>';
+            listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando conversas...</div>';
             
             fetch('/get_chats')
                 .then(res => res.json())
                 .then(data => {
                     if(data.theme) document.body.setAttribute('data-theme', data.theme);
                     renderChatList(data.chats);
-                }).catch(e => {
-                    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro de conexão com o servidor. Verifique o console.</div>';
-                    console.error(e);
-                });
+                }).catch(e => console.error(e));
         }
 
         function renderChatList(chats) {
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (!chats || chats.length === 0) {
-                listContainer.innerHTML = `
-                    <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                        <p style="margin-bottom:10px;">Nenhum chat recente encontrado na Evolution API.</p>
-                        <button class="download-btn" onclick="refreshData()">Tentar Novamente</button>
-                    </div>`;
+                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum chat recente.</div>';
                 return;
             }
             chats.forEach(chat => {
                 let div = document.createElement('div');
-                div.className = 'chat-item';
-                div.onclick = () => openChatDirect(chat.id, chat.name, chat.pic);
-                let avatarHTML = chat.pic ? `<img src="${chat.pic}" alt="Avatar">` : chat.name.substring(0,2).toUpperCase();
-                div.innerHTML = `
-                    <div class="avatar">${avatarHTML}</div>
-                    <div class="chat-item-info">
-                        <h4>${chat.name} <span>${chat.time || ''}</span></h4>
-                        <p>${chat.last_msg || chat.id}</p>
-                    </div>
-                `;
-                listContainer.appendChild(div);
+                div.className = 'avatar';
+                let avatarHTML = chat.pic ? '<img src="' + chat.pic + '">' : chat.name.substring(0,2).toUpperCase();
+                
+                let item = document.createElement('div');
+                item.className = 'chat-item';
+                item.onclick = () => openChatDirect(chat.id, chat.name, chat.pic);
+                item.innerHTML = '<div class="avatar">' + avatarHTML + '</div><div class="chat-item-info"><h4>' + chat.name + ' <span>' + (chat.time || '') + '</span></h4><p>' + chat.last_msg + '</p></div>';
+                listContainer.appendChild(item);
             });
         }
 
         function loadFriends() {
             const container = document.getElementById('friends-list');
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando contatos...</div>';
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando...</div>';
             fetch('/get_contacts')
                 .then(res => res.json())
                 .then(data => {
                     container.innerHTML = '';
-                    const contacts = data.contacts || [];
-                    if(contacts.length === 0) {
-                        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum contato encontrado.</div>';
-                        return;
-                    }
-                    contacts.forEach(c => {
-                        let div = document.createElement('div');
-                        div.className = 'chat-item';
-                        div.onclick = () => openChatDirect(c.id, c.name, c.pic);
-                        let avatarHTML = c.pic ? `<img src="${c.pic}" alt="Avatar">` : c.name.substring(0,2).toUpperCase();
-                        div.innerHTML = `
-                            <div class="avatar">${avatarHTML}</div>
-                            <div class="chat-item-info">
-                                <h4>${c.name}</h4>
-                                <p>${c.id}</p>
-                            </div>
-                        `;
-                        container.appendChild(div);
+                    (data.contacts || []).forEach(c => {
+                        let avatarHTML = c.pic ? '<img src="' + c.pic + '">' : c.name.substring(0,2).toUpperCase();
+                        let item = document.createElement('div');
+                        item.className = 'chat-item';
+                        item.onclick = () => openChatDirect(c.id, c.name, c.pic);
+                        item.innerHTML = '<div class="avatar">' + avatarHTML + '</div><div class="chat-item-info"><h4>' + c.name + '</h4><p>' + c.id + '</p></div>';
+                        container.appendChild(item);
                     });
-                }).catch(e => {
-                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro ao carregar contatos.</div>';
-                    console.error(e);
                 });
         }
 
         function loadGroups() {
             const container = document.getElementById('groups-list');
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Buscando grupos...</div>';
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando...</div>';
             fetch('/get_groups')
                 .then(res => res.json())
                 .then(data => {
                     container.innerHTML = '';
-                    const groups = data.groups || [];
-                    if(groups.length === 0) {
-                        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum grupo encontrado.</div>';
-                        return;
-                    }
-                    groups.forEach(g => {
-                        let div = document.createElement('div');
-                        div.className = 'chat-item';
-                        div.onclick = () => openChatDirect(g.id, g.name, g.pic);
-                        let avatarHTML = g.pic ? `<img src="${g.pic}" alt="Avatar">` : g.name.substring(0,2).toUpperCase();
-                        div.innerHTML = `
-                            <div class="avatar">${avatarHTML}</div>
-                            <div class="chat-item-info">
-                                <h4>${g.name}</h4>
-                                <p>${g.id}</p>
-                            </div>
-                        `;
-                        container.appendChild(div);
+                    (data.groups || []).forEach(g => {
+                        let avatarHTML = g.pic ? '<img src="' + g.pic + '">' : g.name.substring(0,2).toUpperCase();
+                        let item = document.createElement('div');
+                        item.className = 'chat-item';
+                        item.onclick = () => openChatDirect(g.id, g.name, g.pic);
+                        item.innerHTML = '<div class="avatar">' + avatarHTML + '</div><div class="chat-item-info"><h4>' + g.name + '</h4><p>' + g.id + '</p></div>';
+                        container.appendChild(item);
                     });
-                }).catch(e => {
-                    container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Erro ao carregar grupos.</div>';
-                    console.error(e);
                 });
         }
 
         function openContactsModal() {
             document.getElementById('contacts-modal').style.display = 'flex';
-            document.getElementById('contact-search-input').value = '';
             fetch('/get_contacts')
                 .then(res => res.json())
                 .then(data => {
@@ -473,40 +404,26 @@ HTML_TEMPLATE = """
         function renderContactModalList(contacts) {
             const container = document.getElementById('contacts-modal-list');
             container.innerHTML = '';
-            if (contacts.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 10px;">Nenhum contato encontrado.</p>';
-                return;
-            }
             contacts.forEach(c => {
-                let div = document.createElement('div');
-                div.className = 'chat-item';
-                div.onclick = () => { closeContactsModal(); openChatDirect(c.id, c.name, c.pic); };
-                let avatarHTML = c.pic ? `<img src="${c.pic}" alt="Avatar">` : c.name.substring(0,2).toUpperCase();
-                div.innerHTML = `
-                    <div class="avatar">${avatarHTML}</div>
-                    <div class="chat-item-info">
-                        <h4>${c.name}</h4>
-                        <p>${c.id}</p>
-                    </div>
-                `;
-                container.appendChild(div);
+                let avatarHTML = c.pic ? '<img src="' + c.pic + '">' : c.name.substring(0,2).toUpperCase();
+                let item = document.createElement('div');
+                item.className = 'chat-item';
+                item.onclick = () => { closeContactsModal(); openChatDirect(c.id, c.name, c.pic); };
+                item.innerHTML = '<div class="avatar">' + avatarHTML + '</div><div class="chat-item-info"><h4>' + c.name + '</h4><p>' + c.id + '</p></div>';
+                container.appendChild(item);
             });
         }
 
         function loadMessages(chatId) {
-            fetch(`/get_messages?chat_id=${encodeURIComponent(chatId)}`)
+            fetch('/get_messages?chat_id=' + encodeURIComponent(chatId))
                 .then(res => res.json())
                 .then(data => {
                     const chatBody = document.getElementById('chat-body');
                     chatBody.innerHTML = '';
-                    if(!data.messages || data.messages.length === 0) {
-                        chatBody.innerHTML = '<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">Nenhuma mensagem neste chat ainda.</div>';
-                        return;
-                    }
-                    data.messages.forEach(msg => {
+                    (data.messages || []).forEach(msg => {
                         let div = document.createElement('div');
-                        div.className = `message ${msg.is_me ? 'sent' : 'received'}`;
-                        div.innerHTML = `<span>${msg.text}</span><span class="time">${msg.time}</span>`;
+                        div.className = 'message ' + (msg.is_me ? 'sent' : 'received');
+                        div.innerHTML = '<span>' + msg.text + '</span><span class="time">' + msg.time + '</span>';
                         chatBody.appendChild(div);
                     });
                     chatBody.scrollTop = chatBody.scrollHeight;
@@ -517,48 +434,35 @@ HTML_TEMPLATE = """
             const input = document.getElementById('message-input');
             const text = input.value.trim();
             if (!text || !currentChatId) return;
-
             fetch('/send_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat_id: currentChatId, text: text })
-            }).then(res => res.json()).then(data => {
-                input.value = '';
-                loadMessages(currentChatId);
-            });
+            }).then(() => { input.value = ''; loadMessages(currentChatId); });
         }
 
         function scheduleMessage() {
             const number = document.getElementById('sched-number').value.trim();
             const text = document.getElementById('sched-text').value;
             const delay = document.getElementById('sched-delay').value;
-            if(!number || !text) return alert('Preencha o número e a mensagem!');
-
+            if(!number || !text) return alert('Preencha os campos!');
             fetch('/schedule_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat_id: number, text: text, delay_seconds: parseInt(delay) })
-            }).then(res => res.json()).then(data => {
-                alert(data.status);
-                document.getElementById('sched-list').innerHTML = `Agendado para ${number} daqui a ${delay}s.`;
-            });
+            }).then(res => res.json()).then(data => alert(data.status));
         }
 
         function startMassDispatch() {
             const raw = document.getElementById('mass-numbers').value.trim();
             const text = document.getElementById('mass-text').value.trim();
-            if(!raw || !text) return alert('Preencha os números e a mensagem!');
-            
-            const numbers = raw.split(/[\n,]+/).map(n => n.trim()).filter(n => n);
-            document.getElementById('mass-status').innerHTML = `Iniciando disparo para ${numbers.length} contatos...`;
-            
+            if(!raw || !text) return alert('Preencha os campos!');
+            const numbers = raw.split(/[\\n,]+/).map(n => n.trim()).filter(n => n);
             fetch('/mass_dispatch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ numbers: numbers, text: text })
-            }).then(res => res.json()).then(data => {
-                document.getElementById('mass-status').innerHTML = `✅ Disparo concluído com sucesso!`;
-            });
+            }).then(() => alert('Disparo concluído!'));
         }
 
         function openMods() {
@@ -568,13 +472,6 @@ HTML_TEMPLATE = """
                     document.getElementById('theme-select').value = settings.theme;
                     document.getElementById('api-key').value = settings.openai_api_key;
                     document.getElementById('ai-status').value = settings.ai_enabled.toString();
-                    document.getElementById('auto-reply-enabled').checked = settings.auto_reply_enabled;
-                    document.getElementById('auto-reply-text').value = settings.auto_reply_text;
-                    document.getElementById('lossless-media').checked = settings.lossless_media;
-                    document.getElementById('anti-revoke').checked = settings.anti_revoke;
-                    document.getElementById('freeze-last-seen').checked = settings.freeze_last_seen;
-                    document.getElementById('anti-blue-tick').checked = settings.anti_blue_tick;
-                    document.getElementById('ghost-mode').checked = settings.ghost_mode;
                     document.getElementById('mods-modal').style.display = 'flex';
                 });
         }
@@ -586,22 +483,19 @@ HTML_TEMPLATE = """
                 theme: document.getElementById('theme-select').value,
                 openai_api_key: document.getElementById('api-key').value,
                 ai_enabled: document.getElementById('ai-status').value === 'true',
-                auto_reply_enabled: document.getElementById('auto-reply-enabled').checked,
-                auto_reply_text: document.getElementById('auto-reply-text').value,
-                lossless_media: document.getElementById('lossless-media').checked,
-                anti_revoke: document.getElementById('anti-revoke').checked,
-                freeze_last_seen: document.getElementById('freeze-last-seen').checked,
-                anti_blue_tick: document.getElementById('anti-blue-tick').checked,
-                ghost_mode: document.getElementById('ghost-mode').checked
+                auto_reply_enabled: false,
+                auto_reply_text: "",
+                lossless_media: true,
+                anti_revoke: true,
+                freeze_last_seen: true,
+                anti_blue_tick: true,
+                ghost_mode: true
             };
             fetch('/save_settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)
-            }).then(() => {
-                closeMods();
-                alert('Configurações salvas!');
-            });
+            }).then(() => { closeMods(); alert('Salvo com sucesso!'); });
         }
     </script>
 </body>
@@ -637,7 +531,6 @@ def get_chats():
                 chats_dict[jid] = {"id": jid, "name": name, "last_msg": last_text, "pic": pic, "time": time_str}
     except Exception as e:
         print(f"Erro chats: {e}")
-
     return {"chats": list(chats_dict.values()), "theme": gb_settings["theme"]}
 
 @app.get("/get_contacts")
