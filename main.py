@@ -56,7 +56,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v15 - Evolution API</title>
+    <title>WhatsApp GB Custom v16 - Evolution API</title>
     <style>
         :root {
             --bg-color: #0b141a;
@@ -112,6 +112,7 @@ HTML_TEMPLATE = """
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #111; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
+        .radio-fab-btn { position: absolute; bottom: 78px; right: 20px; background: #22c55e; color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
         
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; word-break: break-word; color: var(--text-primary); }
@@ -122,7 +123,7 @@ HTML_TEMPLATE = """
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .download-btn { background: var(--accent-color); color: #111; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
         
-        /* Estilos do Troca Fitas Retro (Cassete Player) */
+        /* Troca Fitas Retro (Cassete Player) */
         .radio-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 15px; background: radial-gradient(circle, #1a2228 0%, #0b141a 100%); }
         .cassette { width: 260px; height: 160px; background: linear-gradient(135deg, #2a2f35 0%, #15191d 100%); border: 3px solid var(--accent-color); border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: space-between; padding: 12px; position: relative; margin-bottom: 15px; }
         .cassette-label { background: #e2e8f0; color: #0f172a; font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; text-align: center; letter-spacing: 1px; }
@@ -177,6 +178,7 @@ HTML_TEMPLATE = """
                     <p style="color: var(--text-secondary); font-size: 13px;">Carregando conversas recentes...</p>
                 </div>
             </div>
+            <button class="radio-fab-btn" onclick="switchTab('radio', null)" title="Abrir Rádio" type="button">🎧</button>
             <button class="fab-btn" onclick="openContactsModal()" type="button">💬</button>
         </div>
 
@@ -186,6 +188,8 @@ HTML_TEMPLATE = """
                     <button class="download-btn" onclick="loadFriends()" type="button">👥 Carregar Contatos</button>
                 </div>
             </div>
+            <button class="radio-fab-btn" onclick="switchTab('radio', null)" title="Abrir Rádio" type="button">🎧</button>
+            <button class="fab-btn" onclick="openContactsModal()" type="button">💬</button>
         </div>
 
         <div id="groups-view" class="view-section hidden">
@@ -194,6 +198,8 @@ HTML_TEMPLATE = """
                     <button class="download-btn" onclick="loadGroups()" type="button">📢 Carregar Grupos</button>
                 </div>
             </div>
+            <button class="radio-fab-btn" onclick="switchTab('radio', null)" title="Abrir Rádio" type="button">🎧</button>
+            <button class="fab-btn" onclick="openContactsModal()" type="button">💬</button>
         </div>
 
         <div id="mass-view" class="view-section hidden">
@@ -209,6 +215,7 @@ HTML_TEMPLATE = """
                 </div>
                 <button class="download-btn" onclick="startMassDispatch()" type="button">Iniciar Disparo em Massa</button>
             </div>
+            <button class="radio-fab-btn" onclick="switchTab('radio', null)" title="Abrir Rádio" type="button">🎧</button>
         </div>
 
         <div id="schedule-view" class="view-section hidden">
@@ -228,6 +235,7 @@ HTML_TEMPLATE = """
                 </div>
                 <button class="download-btn" onclick="scheduleMessage()" type="button">Agendar Disparo</button>
             </div>
+            <button class="radio-fab-btn" onclick="switchTab('radio', null)" title="Abrir Rádio" type="button">🎧</button>
         </div>
 
         <div id="radio-view" class="view-section hidden">
@@ -252,7 +260,10 @@ HTML_TEMPLATE = """
                 </div>
 
                 <audio id="web-radio-audio" src="https://azuracast.deffine.com.br/listen/deffine_web_radio/radio.mp3"></audio>
-                <button class="radio-btn" id="radio-toggle-btn" onclick="toggleRadio()" type="button">▶️ OUVIR RÁDIO</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="radio-btn" id="radio-toggle-btn" onclick="toggleRadio()" type="button">▶️ OUVIR</button>
+                    <button class="radio-btn" style="background:#ef4444; color:#fff;" onclick="stopRadio()" type="button">⏹️ DESLIGAR</button>
+                </div>
             </div>
         </div>
 
@@ -270,7 +281,6 @@ HTML_TEMPLATE = """
             <button class="nav-item" onclick="switchTab('groups', this)" type="button">📢 Grupos</button>
             <button class="nav-item" onclick="switchTab('mass', this)" type="button">🚀 Disparo</button>
             <button class="nav-item" onclick="switchTab('schedule', this)" type="button">⏰ Agenda</button>
-            <button class="nav-item" onclick="switchTab('radio', this)" type="button">🎧 Rádio</button>
         </div>
     </div>
 
@@ -338,14 +348,16 @@ HTML_TEMPLATE = """
         function switchTab(tab, btnElement) {
             activeTabName = tab;
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => {
+                if(el !== btnElement) el.classList.remove('active');
+            });
             if(btnElement) btnElement.classList.add('active');
 
             document.getElementById('header-buttons').innerHTML = '<button class="mods-btn" onclick="openMods()" type="button">⚙️ Mods</button>';
 
             if (tab === 'home') { document.getElementById('home-view').classList.remove('hidden'); refreshData(); }
-            else if (tab === 'friends') document.getElementById('friends-view').classList.remove('hidden');
-            else if (tab === 'groups') document.getElementById('groups-view').classList.remove('hidden');
+            else if (tab === 'friends') { document.getElementById('friends-view').classList.remove('hidden'); loadFriends(); }
+            else if (tab === 'groups') { document.getElementById('groups-view').classList.remove('hidden'); loadGroups(); }
             else if (tab === 'mass') document.getElementById('mass-view').classList.remove('hidden');
             else if (tab === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
             else if (tab === 'radio') document.getElementById('radio-view').classList.remove('hidden');
@@ -365,7 +377,7 @@ HTML_TEMPLATE = """
             
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('chat-view').classList.remove('hidden');
-            document.getElementById('header-buttons').innerHTML = '<button class="back-btn" onclick="switchTab(\\'' + activeTabName + '\\')" type="button">⬅️ Voltar</button>';
+            document.getElementById('header-buttons').innerHTML = '<button class="back-btn" onclick="switchTab(\\'' + activeTabName + '\\', null)" type="button">⬅️ Voltar</button>';
             loadMessages(id);
         }
 
@@ -382,7 +394,7 @@ HTML_TEMPLATE = """
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (!chats || chats.length === 0) {
-                listContainer.innerHTML = '<div style="padding: 30px; text-align: center;"><p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Nenhum chat recente. Carregando contatos...</p><button class="download-btn" onclick="loadFriends()" type="button">👥 Ver Contatos</button></div>';
+                listContainer.innerHTML = '<div style="padding: 30px; text-align: center;"><p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Nenhuma conversa recente encontrada.</p></div>';
                 return;
             }
             chats.forEach(chat => {
@@ -397,12 +409,17 @@ HTML_TEMPLATE = """
 
         function loadFriends() {
             const container = document.getElementById('friends-list');
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando...</div>';
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando contatos...</div>';
             fetch('/get_contacts')
                 .then(res => res.json())
                 .then(data => {
                     container.innerHTML = '';
-                    (data.contacts || []).forEach(c => {
+                    const contacts = data.contacts || [];
+                    if(contacts.length === 0) {
+                        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum contato encontrado.</div>';
+                        return;
+                    }
+                    contacts.forEach(c => {
                         let avatarHTML = c.pic ? '<img src="' + c.pic + '">' : c.name.substring(0,2).toUpperCase();
                         let item = document.createElement('div');
                         item.className = 'chat-item';
@@ -415,12 +432,17 @@ HTML_TEMPLATE = """
 
         function loadGroups() {
             const container = document.getElementById('groups-list');
-            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando...</div>';
+            container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Carregando grupos...</div>';
             fetch('/get_groups')
                 .then(res => res.json())
                 .then(data => {
                     container.innerHTML = '';
-                    (data.groups || []).forEach(g => {
+                    const groups = data.groups || [];
+                    if(groups.length === 0) {
+                        container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum grupo encontrado.</div>';
+                        return;
+                    }
+                    groups.forEach(g => {
                         let avatarHTML = g.pic ? '<img src="' + g.pic + '">' : g.name.substring(0,2).toUpperCase();
                         let item = document.createElement('div');
                         item.className = 'chat-item';
@@ -498,18 +520,33 @@ HTML_TEMPLATE = """
 
             if (audio.paused) {
                 audio.play().then(() => {
-                    btn.innerText = '⏸️ PAUSAR RÁDIO';
+                    btn.innerText = '⏸️ PAUSAR';
                     reelLeft.classList.add('playing-reel');
                     reelRight.classList.add('playing-reel');
                     statusTxt.innerText = 'AO VIVO';
                 }).catch(e => alert('Erro ao reproduzir rádio: ' + e));
             } else {
                 audio.pause();
-                btn.innerText = '▶️ OUVIR RÁDIO';
+                btn.innerText = '▶️ OUVIR';
                 reelLeft.classList.remove('playing-reel');
                 reelRight.classList.remove('playing-reel');
                 statusTxt.innerText = 'PAUSADO';
             }
+        }
+
+        function stopRadio() {
+            const audio = document.getElementById('web-radio-audio');
+            const btn = document.getElementById('radio-toggle-btn');
+            const reelLeft = document.getElementById('reel-left');
+            const reelRight = document.getElementById('reel-right');
+            const statusTxt = document.getElementById('radio-status-text');
+
+            audio.pause();
+            audio.currentTime = 0;
+            btn.innerText = '▶️ OUVIR';
+            reelLeft.classList.remove('playing-reel');
+            reelRight.classList.remove('playing-reel');
+            statusTxt.innerText = 'DESLIGADO';
         }
 
         function changeVolume(val) {
@@ -590,31 +627,29 @@ def get_profile():
     name = INSTANCE_NAME
     pic = ""
     try:
-        # Busca direta da foto de perfil na Evolution API
-        url = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
-        payload = {"number": INSTANCE_NAME}
-        res = requests.post(url, json=payload, headers=headers, timeout=5)
-        if res.status_code == 200:
-            data = res.json()
-            pic = data.get("profilePictureUrl") or data.get("pictureUrl") or ""
+        url_inst = f"{EVOLUTION_URL}/instance/fetchInstances"
+        res_inst = requests.get(url_inst, headers=headers, timeout=5)
+        if res_inst.status_code == 200:
+            for inst in res_inst.json():
+                if inst.get("name") == INSTANCE_NAME:
+                    profile = inst.get("profile") or {}
+                    name = profile.get("name") or INSTANCE_NAME
+                    pic = profile.get("profilePictureUrl") or profile.get("pictureUrl", "")
+                    break
         
         if not pic:
-            url_inst = f"{EVOLUTION_URL}/instance/fetchInstances"
-            res_inst = requests.get(url_inst, headers=headers, timeout=5)
-            if res_inst.status_code == 200:
-                for inst in res_inst.json():
-                    if inst.get("name") == INSTANCE_NAME:
-                        profile = inst.get("profile") or {}
-                        name = profile.get("name") or INSTANCE_NAME
-                        pic = profile.get("profilePictureUrl") or profile.get("pictureUrl", "")
-                        break
+            url_pic = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
+            res_pic = requests.post(url_pic, json={"number": INSTANCE_NAME}, headers=headers, timeout=5)
+            if res_pic.status_code == 200:
+                data = res_pic.json()
+                pic = data.get("profilePictureUrl") or data.get("pictureUrl") or ""
     except Exception as e:
         print(f"Erro perfil: {e}")
     return {"name": name, "pic": pic}
 
 @app.get("/get_chats")
 def get_chats():
-    chats_dict = {}
+    chats_list = []
     try:
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
@@ -630,24 +665,10 @@ def get_chats():
                 last_text = last_message.get("conversation") or last_message.get("text") or "Conversa ativa"
                 timestamp = last_message.get("messageTimestamp", 0)
                 time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
-                chats_dict[jid] = {"id": jid, "name": name, "last_msg": last_text, "pic": pic, "time": time_str}
-        
-        # Fallback caso os chats venham vazios, puxa os contatos para preencher a tela inicial
-        if not chats_dict:
-            url_cont = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
-            res_cont = requests.post(url_cont, json={}, headers=headers, timeout=5)
-            if res_cont.status_code == 200:
-                c_data = res_cont.json()
-                c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
-                for c in c_items[:15]:
-                    jid = c.get("id") or c.get("remoteJid", "")
-                    if not jid: continue
-                    name = c.get("name") or c.get("pushName") or jid.split("@")[0]
-                    pic = c.get("profilePictureUrl", "")
-                    chats_dict[jid] = {"id": jid, "name": name, "last_msg": "Toque para conversar", "pic": pic, "time": ""}
+                chats_list.append({"id": jid, "name": name, "last_msg": last_text, "pic": pic, "time": time_str})
     except Exception as e:
         print(f"Erro chats: {e}")
-    return {"chats": list(chats_dict.values()), "theme": gb_settings["theme"]}
+    return {"chats": chats_list, "theme": gb_settings["theme"]}
 
 @app.get("/get_contacts")
 def get_contacts():
