@@ -80,8 +80,8 @@ HTML_TEMPLATE = """
             --bg-color: #eae6df; --container-bg: #ffffff; --header-bg: #00a884; --border-color: #d1d7db; --text-primary: #111b21; --text-secondary: #667781; --sent-bg: #d9fdd3; --received-bg: #ffffff; --accent-color: #00a884; --hover-item: #f5f6f6;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; transition: 0.3s; }
-        .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; }
+        body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; z-index: 1; }
         @media(min-width: 500px) { .container { height: 92vh; border-radius: 12px; } }
         
         .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; z-index: 5; }
@@ -91,16 +91,16 @@ HTML_TEMPLATE = """
         .status-info h3 { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-info p { font-size: 11px; color: var(--text-secondary); }
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
-        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; z-index: 10; position: relative; }
         
         .bottom-nav { background: var(--header-bg); border-top: 1px solid var(--border-color); display: flex; overflow-x: auto; padding: 6px 4px; gap: 4px; z-index: 50; white-space: nowrap; }
         .bottom-nav::-webkit-scrollbar { display: none; }
         .nav-item { background: transparent; border: none; color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
         .nav-item:hover, .nav-item.active { background: var(--accent-color); color: #fff; }
 
-        .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; z-index: 2; }
         .hidden { display: none !important; }
-        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); position: relative; padding-bottom: 20px; }
+        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); position: relative; padding-bottom: 20px; z-index: 3; }
         .chat-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
         .chat-item:hover { background: var(--hover-item); }
         .chat-item-info { flex: 1; min-width: 0; }
@@ -108,7 +108,7 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 50; transition: transform 0.2s; }
+        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 60; transition: transform 0.2s; }
         .fab-btn:hover { transform: scale(1.08); }
 
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
@@ -117,12 +117,12 @@ HTML_TEMPLATE = """
         .message.sent { background: var(--sent-bg); align-self: flex-end; border-top-right-radius: 0; }
         .message .time { font-size: 10px; color: var(--text-secondary); float: right; margin-left: 8px; margin-top: 4px; line-height: 15px; }
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; z-index: 100; position: relative; pointer-events: auto; }
         .chat-footer { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); }
         .chat-footer input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; color: var(--text-primary); outline: none; font-size: 14px; }
         .chat-footer button { background: var(--accent-color); border: none; color: #fff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--container-bg); padding: 20px; border-radius: 12px; width: 92%; max-width: 420px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
         .modal-content h2 { color: var(--accent-color); margin-bottom: 14px; font-size: 17px; }
         .form-group { margin-bottom: 12px; }
@@ -147,7 +147,7 @@ HTML_TEMPLATE = """
                 </div>
             </div>
             <div class="header-btns" id="header-buttons">
-                <button class="mods-btn" onclick="openMods()">⚙️ Mods</button>
+                <button class="mods-btn" onclick="openMods()" type="button">⚙️ Mods</button>
             </div>
         </div>
 
@@ -156,16 +156,16 @@ HTML_TEMPLATE = """
             <div class="chat-list-body" id="chat-list">
                 <div style="padding: 30px; text-align: center;">
                     <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Interface pronta e desbloqueada.</p>
-                    <button class="download-btn" id="btn-refresh" type="button">🔄 Carregar Conversas da API</button>
+                    <button class="download-btn" id="btn-refresh" onclick="refreshData()" type="button">🔄 Carregar Conversas da API</button>
                 </div>
             </div>
-            <button class="fab-btn" onclick="openContactsModal()" title="Nova Conversa">💬</button>
+            <button class="fab-btn" onclick="openContactsModal()" type="button" title="Nova Conversa">💬</button>
         </div>
 
         <div id="friends-view" class="view-section hidden">
             <div class="chat-list-body" id="friends-list">
                 <div style="padding: 30px; text-align: center;">
-                    <button class="download-btn" id="btn-friends" type="button">👥 Carregar Contatos</button>
+                    <button class="download-btn" id="btn-friends" onclick="loadFriends()" type="button">👥 Carregar Contatos</button>
                 </div>
             </div>
         </div>
@@ -173,7 +173,7 @@ HTML_TEMPLATE = """
         <div id="groups-view" class="view-section hidden">
             <div class="chat-list-body" id="groups-list">
                 <div style="padding: 30px; text-align: center;">
-                    <button class="download-btn" id="btn-groups" type="button">📢 Carregar Grupos</button>
+                    <button class="download-btn" id="btn-groups" onclick="loadGroups()" type="button">📢 Carregar Grupos</button>
                 </div>
             </div>
         </div>
@@ -189,7 +189,7 @@ HTML_TEMPLATE = """
                     <label>Mensagem do Disparo</label>
                     <input type="text" id="mass-text" placeholder="Promoção imperdível hoje!">
                 </div>
-                <button class="download-btn" id="btn-mass" type="button">Iniciar Disparo em Massa</button>
+                <button class="download-btn" id="btn-mass" onclick="startMassDispatch()" type="button">Iniciar Disparo em Massa</button>
                 <div id="mass-status" style="margin-top: 10px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
@@ -209,7 +209,7 @@ HTML_TEMPLATE = """
                     <label>Disparar em quantos segundos?</label>
                     <input type="number" id="sched-delay" value="10">
                 </div>
-                <button class="download-btn" id="btn-sched" type="button">Agendar Disparo</button>
+                <button class="download-btn" id="btn-sched" onclick="scheduleMessage()" type="button">Agendar Disparo</button>
                 <div id="sched-list" style="margin-top: 15px; font-size: 13px; color: var(--text-secondary);"></div>
             </div>
         </div>
@@ -229,18 +229,18 @@ HTML_TEMPLATE = """
             <div class="chat-body" id="chat-body"></div>
             <div class="chat-footer">
                 <input type="text" id="message-input" placeholder="Digite uma mensagem...">
-                <button id="btn-send-msg" type="button">Enviar</button>
+                <button id="btn-send-msg" onclick="sendMessage()" type="button">Enviar</button>
             </div>
         </div>
 
         <!-- Menu Horizontal Inferior -->
         <div class="bottom-nav">
-            <button class="nav-item active" data-tab="home" type="button">🏠 Início</button>
-            <button class="nav-item" data-tab="friends" type="button">👥 Amigos</button>
-            <button class="nav-item" data-tab="groups" type="button">📢 Grupos</button>
-            <button class="nav-item" data-tab="mass" type="button">🚀 Disparo Massa</button>
-            <button class="nav-item" data-tab="schedule" type="button">⏰ Agendamento</button>
-            <button class="nav-item" data-tab="radio" type="button">🎧 Web Rádio</button>
+            <button class="nav-item active" data-tab="home" onclick="switchTab('home', this)" type="button">🏠 Início</button>
+            <button class="nav-item" data-tab="friends" onclick="switchTab('friends', this)" type="button">👥 Amigos</button>
+            <button class="nav-item" data-tab="groups" onclick="switchTab('groups', this)" type="button">📢 Grupos</button>
+            <button class="nav-item" data-tab="mass" onclick="switchTab('mass', this)" type="button">🚀 Disparo Massa</button>
+            <button class="nav-item" data-tab="schedule" onclick="switchTab('schedule', this)" type="button">⏰ Agendamento</button>
+            <button class="nav-item" data-tab="radio" onclick="switchTab('radio', this)" type="button">🎧 Web Rádio</button>
         </div>
     </div>
 
@@ -250,13 +250,13 @@ HTML_TEMPLATE = """
             <h2>👥 Iniciar Conversa com Contato</h2>
             <div class="form-group">
                 <label>Pesquisar nome ou número</label>
-                <input type="text" id="contact-search-input" placeholder="Digite para buscar...">
+                <input type="text" id="contact-search-input" oninput="filterContacts()" placeholder="Digite para buscar...">
             </div>
             <div id="contacts-modal-list" style="max-height: 300px; overflow-y: auto; margin-top: 10px;">
                 <p style="text-align: center; color: var(--text-secondary);">Clique em carregar contatos...</p>
             </div>
             <div class="modal-buttons" style="margin-top: 14px;">
-                <button class="btn-cancel" id="btn-close-contacts" type="button">Fechar</button>
+                <button class="btn-cancel" onclick="closeContactsModal()" type="button">Fechar</button>
             </div>
         </div>
     </div>
@@ -297,8 +297,8 @@ HTML_TEMPLATE = """
             <label class="checkbox-group"><input type="checkbox" id="anti-blue-tick"> 👀 Ocultar Confirmação de Leitura</label>
             <label class="checkbox-group"><input type="checkbox" id="ghost-mode"> 👻 Ocultar "Digitando..."</label>
             <div class="modal-buttons">
-                <button class="btn-cancel" id="btn-close-mods" type="button">Cancelar</button>
-                <button class="btn-save" id="btn-save-mods" type="button">Salvar Alterações</button>
+                <button class="btn-cancel" onclick="closeMods()" type="button">Cancelar</button>
+                <button class="btn-save" onclick="saveMods()" type="button">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -309,34 +309,6 @@ HTML_TEMPLATE = """
         let activeTabName = 'home';
         let allContactsCache = [];
 
-        document.addEventListener("DOMContentLoaded", () => {
-            // Eventos do Menu Inferior
-            document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    switchTab(btn.getAttribute('data-tab'), btn);
-                });
-            });
-
-            // Botões principais
-            document.getElementById('btn-refresh').addEventListener('click', refreshData);
-            document.getElementById('btn-friends').addEventListener('click', loadFriends);
-            document.getElementById('btn-groups').addEventListener('click', loadGroups);
-            document.getElementById('btn-mass').addEventListener('click', startMassDispatch);
-            document.getElementById('btn-sched').addEventListener('click', scheduleMessage);
-            document.getElementById('btn-send-msg').addEventListener('click', sendMessage);
-            document.getElementById('message-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-            
-            // Modais
-            document.getElementById('contact-search-input').addEventListener('input', filterContacts);
-            document.getElementById('btn-close-contacts').addEventListener('click', closeContactsModal);
-            document.getElementById('btn-close-mods').addEventListener('click', closeMods);
-            document.getElementById('btn-save-mods').addEventListener('click', saveMods);
-
-            // Botão Mods do topo
-            window.openMods = openMods;
-            window.openContactsModal = openContactsModal;
-        });
-
         function switchTab(tab, btnElement) {
             activeTabName = tab;
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
@@ -345,7 +317,7 @@ HTML_TEMPLATE = """
             if(btnElement) btnElement.classList.add('active');
 
             const headerBtns = document.getElementById('header-buttons');
-            headerBtns.innerHTML = `<button class="mods-btn" onclick="openMods()">⚙️ Mods</button>`;
+            headerBtns.innerHTML = `<button class="mods-btn" onclick="openMods()" type="button">⚙️ Mods</button>`;
 
             if (tab === 'home') document.getElementById('home-view').classList.remove('hidden');
             else if (tab === 'friends') document.getElementById('friends-view').classList.remove('hidden');
