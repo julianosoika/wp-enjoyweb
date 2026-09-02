@@ -6,7 +6,7 @@ import asyncio
 
 app = FastAPI()
 
-# Configurações e Estado do GB Mods (Incluindo os novos recursos)
+# Configurações e Estado do GB Mods
 gb_settings = {
     "openai_api_key": "",
     "ai_enabled": False,
@@ -20,32 +20,73 @@ gb_settings = {
     "lossless_media": True,
 }
 
-# Banco de dados simulado para as mensagens
-mensagens = [
-    {
-        "id": 1,
-        "sender": "Assistente WhatsApp GB",
-        "text": "Bem-vindo ao WhatsApp GB Custom v13! Explore os novos temas e ferramentas no menu 'GB Mods'.",
+# Banco de conversas simuladas
+chats_data = {
+    1: {
+        "name": "Suporte GB Mods 🛡️",
+        "avatar": "GB",
+        "last_msg": "Bem-vindo ao WhatsApp GB Custom v13!",
         "time": "00:00",
-        "is_me": False,
-        "revoked": False,
-        "media_type": None
+        "messages": [
+            {
+                "id": 1,
+                "sender": "Suporte GB Mods",
+                "text": "Bem-vindo ao WhatsApp GB Custom v13! Explore os novos temas e ferramentas no menu 'GB Mods'.",
+                "time": "00:00",
+                "is_me": False,
+                "revoked": False
+            }
+        ]
+    },
+    2: {
+        "name": "Grupo VIP Desenvolvedores 💻",
+        "avatar": "DV",
+        "last_msg": "O painel ficou incrível!",
+        "time": "Ontem",
+        "messages": [
+            {
+                "id": 1,
+                "sender": "Carlos",
+                "text": "Galera, testaram o novo tema Roxo Neon?",
+                "time": "Ontem",
+                "is_me": False,
+                "revoked": False
+            },
+            {
+                "id": 2,
+                "sender": "Você",
+                "text": "O painel ficou incrível!",
+                "time": "Ontem",
+                "is_me": True,
+                "revoked": False
+            }
+        ]
+    },
+    3: {
+        "name": "Ana Souza 📸",
+        "avatar": "AS",
+        "last_msg": "Me manda aquela foto em alta resolução?",
+        "time": "Seg",
+        "messages": [
+            {
+                "id": 1,
+                "sender": "Ana Souza",
+                "text": "Me manda aquela foto em alta resolução?",
+                "time": "Seg",
+                "is_me": False,
+                "revoked": False
+            }
+        ]
     }
-]
-
-# Banco simulado de mensagens agendadas e status
-agendadas = []
-status_lista = [
-    {"id": 1, "user": "Contato 1", "tipo": "Foto", "url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500", "time": "Ontem"},
-    {"id": 2, "user": "Contato 2", "tipo": "Vídeo", "url": "https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1186-large.mp4", "time": "Hoje"}
-]
+}
 
 class MessageModel(BaseModel):
+    chat_id: int
     text: str
-    media_type: str = None
 
 class RevokeModel(BaseModel):
-    id: int
+    chat_id: int
+    msg_id: int
 
 class SettingsModel(BaseModel):
     openai_api_key: str
@@ -60,6 +101,7 @@ class SettingsModel(BaseModel):
     lossless_media: bool
 
 class ScheduleModel(BaseModel):
+    chat_id: int
     text: str
     delay_seconds: int
 
@@ -81,6 +123,7 @@ HTML_TEMPLATE = """
             --sent-bg: #005c4b;
             --received-bg: #202c33;
             --accent-color: #00a884;
+            --hover-item: #2a3942;
         }
 
         [data-theme="midnight-blue"] {
@@ -91,6 +134,7 @@ HTML_TEMPLATE = """
             --sent-bg: #1d3557;
             --received-bg: #1b263b;
             --accent-color: #457b9d;
+            --hover-item: #1b263b;
         }
 
         [data-theme="neon-purple"] {
@@ -101,6 +145,7 @@ HTML_TEMPLATE = """
             --sent-bg: #6b21a8;
             --received-bg: #2b124c;
             --accent-color: #a855f7;
+            --hover-item: #3b1868;
         }
 
         [data-theme="light"] {
@@ -113,26 +158,36 @@ HTML_TEMPLATE = """
             --sent-bg: #d9fdd3;
             --received-bg: #ffffff;
             --accent-color: #00a884;
+            --hover-item: #f5f6f6;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; transition: 0.3s; }
-        .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; }
         @media(min-width: 500px) { .container { height: 92vh; border-radius: 12px; } }
         
         /* Header */
-        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; }
-        .status-info h3 { font-size: 16px; color: var(--text-primary); }
-        .status-info p { font-size: 12px; color: var(--text-secondary); }
-        .header-btns { display: flex; gap: 6px; }
-        .mods-btn, .status-tab-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .mods-btn:hover, .status-tab-btn:hover { opacity: 0.85; }
+        .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 60px; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; }
+        .status-info h3 { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+        .status-info p { font-size: 11px; color: var(--text-secondary); }
+        .header-btns { display: flex; gap: 4px; }
+        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .mods-btn:hover, .status-tab-btn:hover, .back-btn:hover { opacity: 0.85; }
 
-        /* Tabs / Views */
+        /* Views */
         .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .hidden { display: none !important; }
+
+        /* Home Chat List View */
+        .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); }
+        .chat-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
+        .chat-item:hover { background: var(--hover-item); }
+        .chat-item-info { flex: 1; min-width: 0; }
+        .chat-item-info h4 { font-size: 14px; color: var(--text-primary); margin-bottom: 3px; display: flex; justify-content: space-between; }
+        .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
+        .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* Chat Body */
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
@@ -145,8 +200,8 @@ HTML_TEMPLATE = """
         .delete-msg-btn:hover { color: #f15c6d; }
         .badge-lossless { font-size: 9px; background: #00a884; color: #fff; padding: 1px 4px; border-radius: 4px; margin-left: 4px; }
 
-        /* Status Viewer Body */
-        .status-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        /* Secondary Bodies (Status / Schedule) */
+        .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .status-card { background: var(--header-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
         .status-card img, .status-card video { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
         .status-info-box h4 { font-size: 14px; color: var(--text-primary); }
@@ -175,24 +230,31 @@ HTML_TEMPLATE = """
 <body data-theme="dark-oled">
 
     <div class="container">
-        <!-- Header -->
+        <!-- Header Dinâmico -->
         <div class="header">
-            <div class="header-left">
+            <div class="header-left" id="header-left-content">
                 <div class="avatar">GB</div>
                 <div class="status-info">
                     <h3>WhatsApp GB Custom</h3>
-                    <p id="status-text">Online (Modo Fantasma Ativo)</p>
+                    <p>Online (Modo Fantasma)</p>
                 </div>
             </div>
-            <div class="header-btns">
+            <div class="header-btns" id="header-buttons">
                 <button class="status-tab-btn" onclick="toggleView('status')">Status 📸</button>
                 <button class="status-tab-btn" onclick="toggleView('schedule')">Agendar ⏰</button>
                 <button class="mods-btn" onclick="openMods()">⚙️ Mods</button>
             </div>
         </div>
 
-        <!-- Chat View -->
-        <div id="chat-view" class="view-section">
+        <!-- View 1: Lista de Conversas (Home) -->
+        <div id="home-view" class="view-section">
+            <div class="chat-list-body" id="chat-list">
+                <!-- Preenchido via JavaScript -->
+            </div>
+        </div>
+
+        <!-- View 2: Tela de Chat Individual -->
+        <div id="chat-view" class="view-section hidden">
             <div class="chat-body" id="chat-body"></div>
             <div class="chat-footer">
                 <input type="text" id="message-input" placeholder="Digite uma mensagem..." onkeypress="handleKeyPress(event)">
@@ -200,9 +262,9 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
-        <!-- Status Viewer View -->
+        <!-- View 3: Status Viewer -->
         <div id="status-view" class="view-section hidden">
-            <div class="status-body">
+            <div class="sub-body">
                 <h3 style="font-size: 15px; color: var(--accent-color); margin-bottom: 4px;">Status de Contatos (GB Downloader)</h3>
                 <div class="status-card">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500" alt="Status">
@@ -223,11 +285,19 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
-        <!-- Schedule View -->
+        <!-- View 4: Agendador de Mensagens -->
         <div id="schedule-view" class="view-section hidden">
-            <div class="status-body">
-                <h3 style="font-size: 15px; color: var(--accent-color);">⏰ Agendador de Mensagens</h3>
+            <div class="sub-body">
+                <h3 style="font-size: 15px; color: var(--accent-color);">⏰ Agendador de Disparos</h3>
                 <div class="form-group" style="margin-top: 10px;">
+                    <label>Selecione a Conversa Destino</label>
+                    <select id="sched-chat-select">
+                        <option value="1">Suporte GB Mods</option>
+                        <option value="2">Grupo VIP Desenvolvedores</option>
+                        <option value="3">Ana Souza</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Mensagem a ser enviada</label>
                     <input type="text" id="sched-text" placeholder="Ex: Bom dia automático!">
                 </div>
@@ -277,7 +347,7 @@ HTML_TEMPLATE = """
             </div>
 
             <label class="checkbox-group">
-                <input type="checkbox" id="auto-reply-enabled"> 🤖 Ativar Resposta Automática (WhatsApp Business)
+                <input type="checkbox" id="auto-reply-enabled"> 🤖 Ativar Resposta Automática
             </label>
             <label class="checkbox-group">
                 <input type="checkbox" id="lossless-media"> 📷 Enviar Mídia em Qualidade Máxima (Lossless)
@@ -303,71 +373,157 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
+        let currentChatId = null;
+
         function toggleView(view) {
+            document.getElementById('home-view').classList.add('hidden');
             document.getElementById('chat-view').classList.add('hidden');
             document.getElementById('status-view').classList.add('hidden');
             document.getElementById('schedule-view').classList.add('hidden');
-            if(view === 'chat') document.getElementById('chat-view').classList.remove('hidden');
-            if(view === 'status') document.getElementById('status-view').classList.remove('hidden');
-            if(view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
+
+            const headerLeft = document.getElementById('header-left-content');
+            const headerBtns = document.getElementById('header-buttons');
+
+            if (view === 'home') {
+                document.getElementById('home-view').classList.remove('hidden');
+                headerLeft.innerHTML = `
+                    <div class="avatar">GB</div>
+                    <div class="status-info">
+                        <h3>WhatsApp GB Custom</h3>
+                        <p>Online (Modo Fantasma)</p>
+                    </div>`;
+                headerBtns.innerHTML = `
+                    <button class="status-tab-btn" onclick="toggleView('status')">Status 📸</button>
+                    <button class="status-tab-btn" onclick="toggleView('schedule')">Agendar ⏰</button>
+                    <button class="mods-btn" onclick="openMods()">⚙️ Mods</button>`;
+                loadChatList();
+            } else if (view === 'chat') {
+                document.getElementById('chat-view').classList.remove('hidden');
+                headerBtns.innerHTML = `<button class="back-btn" onclick="toggleView('home')">⬅️ Voltar</button>`;
+                loadCurrentChat();
+            } else if (view === 'status' || view === 'schedule') {
+                if (view === 'status') document.getElementById('status-view').classList.remove('hidden');
+                if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
+                
+                headerLeft.innerHTML = `
+                    <div class="status-info">
+                        <h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3>
+                    </div>`;
+                headerBtns.innerHTML = `<button class="back-btn" onclick="toggleView('home')">⬅️ Voltar ao Início</button>`;
+            }
         }
 
-        function loadMessages() {
-            fetch('/get_messages')
+        function loadAppData() {
+            fetch('/get_data')
                 .then(res => res.json())
                 .then(data => {
                     document.body.setAttribute('data-theme', data.theme);
-                    const chatBody = document.getElementById('chat-body');
-                    chatBody.innerHTML = '';
-                    data.messages.forEach(msg => {
-                        let div = document.createElement('div');
-                        div.className = `message ${msg.is_me ? 'sent' : 'received'}`;
-                        
-                        let content = '';
-                        if (msg.revoked) {
-                            content += `<span class="revoked-tag">🚫 [Esta mensagem foi apagada pelo contato]</span>`;
-                        }
-                        content += `<span>${msg.text}</span>`;
-                        if(data.lossless && msg.is_me) content += `<span class="badge-lossless">HD</span>`;
-                        content += `<span class="time">${msg.time}</span>`;
-                        
-                        if (!msg.is_me) {
-                            content += `<button class="delete-msg-btn" onclick="revokeMessage(${msg.id})" title="Apagar">[Apagar]</button>`;
-                        }
-
-                        div.innerHTML = content;
-                        chatBody.appendChild(div);
-                    });
-                    chatBody.scrollTop = chatBody.scrollHeight;
+                    if (document.getElementById('home-view').classList.contains('hidden') === false) {
+                        renderChatList(data.chats);
+                    } else if (currentChatId !== null) {
+                        renderMessages(data.chats[currentChatId]);
+                    }
                 });
+        }
+
+        function loadChatList() {
+            fetch('/get_data')
+                .then(res => res.json())
+                .then(data => {
+                    document.body.setAttribute('data-theme', data.theme);
+                    renderChatList(data.chats);
+                });
+        }
+
+        function renderChatList(chats) {
+            const listContainer = document.getElementById('chat-list');
+            listContainer.innerHTML = '';
+            for (const [id, chat] of Object.entries(chats)) {
+                let div = document.createElement('div');
+                div.className = 'chat-item';
+                div.onclick = () => openChat(id, chat.name);
+                div.innerHTML = `
+                    <div class="avatar">${chat.avatar}</div>
+                    <div class="chat-item-info">
+                        <h4>${chat.name} <span>${chat.time}</span></h4>
+                        <p>${chat.last_msg}</p>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            }
+        }
+
+        function openChat(id, name) {
+            currentChatId = id;
+            document.getElementById('header-left-content').innerHTML = `
+                <div class="avatar">${name.substring(0,2).toUpperCase()}</div>
+                <div class="status-info">
+                    <h3>${name}</h3>
+                    <p>Online</p>
+                </div>`;
+            toggleView('chat');
+        }
+
+        function loadCurrentChat() {
+            if (!currentChatId) return;
+            fetch('/get_data')
+                .then(res => res.json())
+                .then(data => {
+                    renderMessages(data.chats[currentChatId]);
+                });
+        }
+
+        function renderMessages(chat) {
+            const chatBody = document.getElementById('chat-body');
+            chatBody.innerHTML = '';
+            chat.messages.forEach(msg => {
+                let div = document.createElement('div');
+                div.className = `message ${msg.is_me ? 'sent' : 'received'}`;
+                
+                let content = '';
+                if (msg.revoked) {
+                    content += `<span class="revoked-tag">🚫 [Esta mensagem foi apagada pelo contato]</span>`;
+                }
+                content += `<span>${msg.text}</span>`;
+                content += `<span class="time">${msg.time}</span>`;
+                
+                if (!msg.is_me) {
+                    content += `<button class="delete-msg-btn" onclick="revokeMessage(${currentChatId}, ${msg.id})" title="Apagar">[Apagar]</button>`;
+                }
+
+                div.innerHTML = content;
+                chatBody.appendChild(div);
+            });
+            chatBody.scrollTop = chatBody.scrollHeight;
         }
 
         function sendMessage() {
             const input = document.getElementById('message-input');
             const text = input.value.trim();
-            if (!text) return;
+            if (!text || !currentChatId) return;
 
             fetch('/send_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text })
+                body: JSON.stringify({ chat_id: parseInt(currentChatId), text: text })
             }).then(() => {
                 input.value = '';
-                loadMessages();
+                loadCurrentChat();
             });
         }
 
         function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
-        function revokeMessage(id) {
+        function revokeMessage(chatId, msgId) {
             fetch('/revoke_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: id })
-            }).then(() => loadMessages());
+                body: JSON.stringify({ chat_id: chatId, msg_id: msgId })
+            }).then(() => loadCurrentChat());
         }
 
         function scheduleMessage() {
+            const chatId = document.getElementById('sched-chat-select').value;
             const text = document.getElementById('sched-text').value;
             const delay = document.getElementById('sched-delay').value;
             if(!text) return alert('Digite a mensagem!');
@@ -375,7 +531,7 @@ HTML_TEMPLATE = """
             fetch('/schedule_message', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, delay_seconds: parseInt(delay) })
+                body: JSON.stringify({ chat_id: parseInt(chatId), text: text, delay_seconds: parseInt(delay) })
             }).then(res => res.json()).then(data => {
                 alert(data.status);
                 document.getElementById('sched-list').innerHTML = `Última agendada: "${text}" para daqui a ${delay}s.`;
@@ -412,9 +568,11 @@ HTML_TEMPLATE = """
                 lossless_media: document.getElementById('lossless-media').checked,
                 anti_revoke: document.getElementById('anti-revoke').checked,
                 freeze_last_seen: document.getElementById('freeze-last-seen').checked,
-                anti_blue_tick: document.getElementById('anti-blue-tick').checked,
+                anti-blue-tick: document.getElementById('anti-blue-tick').checked,
                 ghost_mode: document.getElementById('ghost-mode').checked
             };
+            // Correção da chave anti-blue-tick no objeto abaixo
+            settings.anti_blue_tick = document.getElementById('anti-blue-tick').checked;
 
             fetch('/save_settings', {
                 method: 'POST',
@@ -422,13 +580,13 @@ HTML_TEMPLATE = """
                 body: JSON.stringify(settings)
             }).then(() => {
                 closeMods();
-                loadMessages();
+                loadChatList();
                 alert('Configurações GB v13 salvas com sucesso!');
             });
         }
 
-        setInterval(loadMessages, 3000);
-        loadMessages();
+        setInterval(loadAppData, 3000);
+        loadChatList();
     </script>
 </body>
 </html>
@@ -438,38 +596,47 @@ HTML_TEMPLATE = """
 def index():
     return HTML_TEMPLATE
 
-@app.get("/get_messages")
-def get_messages():
+@app.get("/get_data")
+def get_data():
     return {
-        "messages": mensagens,
-        "theme": gb_settings["theme"],
-        "lossless": gb_settings["lossless_media"]
+        "chats": chats_data,
+        "theme": gb_settings["theme"]
     }
 
 @app.post("/send_message")
 def send_message(data: MessageModel):
     now = datetime.now().strftime("%H:%M")
-    
-    # Adiciona sua mensagem
-    msg_id = len(mensagens) + 1
-    mensagens.append({"id": msg_id, "sender": "Você", "text": data.text, "time": now, "is_me": True, "revoked": False})
+    chat = chats_data.get(data.chat_id)
+    if not chat:
+        return {"status": "error"}
 
-    # Resposta Inteligente (IA) ou Resposta Automática (Auto-Reply)
+    # Adiciona a mensagem do usuário
+    msg_id = len(chat["messages"]) + 1
+    chat["messages"].append({"id": msg_id, "sender": "Você", "text": data.text, "time": now, "is_me": True, "revoked": False})
+    chat["last_msg"] = f"Você: {data.text}"
+    chat["time"] = now
+
+    # Resposta Inteligente (IA) ou Auto-Reply
     if gb_settings["ai_enabled"] and gb_settings["openai_api_key"]:
-        resp_text = f"🤖 [ChatGPT Ativo] Resposta para: '{data.text}'"
+        resp_text = f"🤖 [ChatGPT] Resposta para: '{data.text}'"
     elif gb_settings["auto_reply_enabled"]:
         resp_text = f"⚡ [Auto-Reply GB] {gb_settings['auto_reply_text']}"
     else:
         return {"status": "success"}
 
-    resp_id = len(mensagens) + 1
-    mensagens.append({"id": resp_id, "sender": "Assistente", "text": resp_text, "time": datetime.now().strftime("%H:%M"), "is_me": False, "revoked": False})
+    resp_id = len(chat["messages"]) + 1
+    chat["messages"].append({"id": resp_id, "sender": chat["name"], "text": resp_text, "time": datetime.now().strftime("%H:%M"), "is_me": False, "revoked": False})
+    chat["last_msg"] = resp_text
+    chat["time"] = datetime.now().strftime("%H:%M")
     return {"status": "success"}
 
 @app.post("/revoke_message")
 def revoke_message(data: RevokeModel):
-    for m in mensagens:
-        if m["id"] == data.id:
+    chat = chats_data.get(data.chat_id)
+    if not chat:
+        return {"status": "error"}
+    for m in chat["messages"]:
+        if m["id"] == data.msg_id:
             if gb_settings["anti_revoke"]:
                 m["revoked"] = True
             else:
@@ -481,8 +648,12 @@ async def schedule_message(data: ScheduleModel):
     async def delayed_task():
         await asyncio.sleep(data.delay_seconds)
         now = datetime.now().strftime("%H:%M")
-        msg_id = len(mensagens) + 1
-        mensagens.append({"id": msg_id, "sender": "Você (Agendado)", "text": data.text, "time": now, "is_me": True, "revoked": False})
+        chat = chats_data.get(data.chat_id)
+        if chat:
+            msg_id = len(chat["messages"]) + 1
+            chat["messages"].append({"id": msg_id, "sender": "Você (Agendado)", "text": data.text, "time": now, "is_me": True, "revoked": False})
+            chat["last_msg"] = f"Agendado: {data.text}"
+            chat["time"] = now
     
     asyncio.create_task(delayed_task())
     return {"status": f"Mensagem agendada com sucesso para daqui a {data.delay_seconds} segundos!"}
