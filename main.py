@@ -167,13 +167,8 @@ HTML_TEMPLATE = """
         <div id="status-view" class="view-section hidden">
             <div class="sub-body">
                 <h3 style="font-size: 15px; color: var(--accent-color); margin-bottom: 4px;">Status de Contatos (GB Downloader)</h3>
-                <div class="status-card">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500" alt="Status">
-                    <div class="status-info-box">
-                        <h4>Contato Status</h4>
-                        <span>Postado recentemente</span>
-                    </div>
-                    <button class="download-btn" onclick="alert('Status baixado com sucesso!')">Baixar</button>
+                <div id="status-list-container">
+                    <p style="color: var(--text-secondary); text-align: center; margin-top: 20px;">Carregando status...</p>
                 </div>
             </div>
         </div>
@@ -284,13 +279,43 @@ HTML_TEMPLATE = """
                 document.getElementById('chat-view').classList.remove('hidden');
                 headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
             } else if (view === 'status' || view === 'schedule') {
-                if (view === 'status') document.getElementById('status-view').classList.remove('hidden');
+                if (view === 'status') {
+                    document.getElementById('status-view').classList.remove('hidden');
+                    loadStatuses();
+                }
                 if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
                 
                 const headerLeft = document.getElementById('header-left-content');
                 headerLeft.innerHTML = `<div class="status-info"><h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3></div>`;
                 headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
             }
+        }
+
+        function loadStatuses() {
+            fetch('/get_statuses')
+                .then(res => res.json())
+                .then(data => {
+                    const container = document.getElementById('status-list-container');
+                    container.innerHTML = '';
+                    if (!data.statuses || data.statuses.length === 0) {
+                        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center; margin-top: 20px;">Nenhum status recente encontrado na instância.</p>';
+                        return;
+                    }
+                    data.statuses.forEach(st => {
+                        let div = document.createElement('div');
+                        div.className = 'status-card';
+                        let imgTag = st.pic ? `<img src="${st.pic}" alt="Status">` : `<div class="avatar" style="width:50px;height:50px;">${st.name.substring(0,2)}</div>`;
+                        div.innerHTML = `
+                            ${imgTag}
+                            <div class="status-info-box">
+                                <h4>${st.name}</h4>
+                                <span>${st.caption || 'Atualização de status'}</span>
+                            </div>
+                            <button class="download-btn" onclick="alert('Status de ${st.name} carregado!')">Visualizar</button>
+                        `;
+                        container.appendChild(div);
+                    });
+                });
         }
 
         function loadProfileHeader() {
@@ -549,25 +574,54 @@ def get_profile():
 def get_chats():
     chats_list = []
     try:
+        # Tenta buscar os chats reais do histórico da Evolution API (v2)
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
         response = requests.get(url, headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
-            items = data if isinstance(data, list) else data.get("chats", [])
+            items = data if isinstance(data, list) else (data.get("chats") or data.get("records") or [])
             for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
                 pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
                 last_message = c.get("lastMessage", {})
-                last_text = last_message.get("conversation") or last_message.get("text") or "Conversa ativa"
+                last_text = last_message.get("conversation") or last_message.get("text") or last_message.get("extendedTextMessage", {}).get("text") or "Conversa ativa"
                 
+                # Formata timestamp se houver
+                timestamp = last_message.get("messageTimestamp", 0)
+                time_str = ""
+                try:
+                    if timestamp:
+                        time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M")
+                except:
+                    pass
+
                 chats_list.append({
                     "id": jid,
                     "name": name,
                     "last_msg": last_text,
                     "pic": pic,
-                    "time": ""
+                    "time": time_str
                 })
+        
+        # Se a rota padrão findChats não retornar nada, tentamos buscar os contatos ativos/recentes como fallback inteligente para o histórico
+        if not chats_list:
+            url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
+            res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
+            if res_c.status_code == 200:
+                c_data = res_c.json()
+                c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
+                for c in c_items[:15]: # Pega os primeiros 15 contatos recentes
+                    jid = c.get("id") or c.get("remoteJid", "")
+                    name = c.get("name") or c.get("pushName") or jid.split("@")[0]
+                    pic = c.get("profilePictureUrl", "")
+                    chats_list.append({
+                        "id": jid,
+                        "name": name,
+                        "last_msg": "Toque para ver mensagens",
+                        "pic": pic,
+                        "time": ""
+                    })
     except Exception as e:
         print(f"Erro ao buscar chats: {e}")
 
@@ -575,6 +629,38 @@ def get_chats():
         "chats": chats_list,
         "theme": gb_settings["theme"]
     }
+
+@app.get("/get_statuses")
+def get_statuses():
+    statuses_list = []
+    try:
+        # Tenta buscar status reais na Evolution API se houver suporte na instância
+        url = f"{EVOLUTION_URL}/chat/findStatus/{INSTANCE_NAME}"
+        response = requests.get(url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            items = data if isinstance(data, list) else (data.get("status") or data.get("statuses") or [])
+            for s in items:
+                name = s.get("name") or s.get("pushName") or "Contato"
+                pic = s.get("profilePictureUrl") or s.get("pictureUrl", "")
+                caption = s.get("caption") or s.get("text") or "Atualização de status"
+                statuses_list.append({
+                    "name": name,
+                    "pic": pic,
+                    "caption": caption
+                })
+    except Exception as e:
+        print(f"Erro ao buscar status reais: {e}")
+
+    # Fallback caso a API de status específica não retorne nada nesta versão da Evolution
+    if not statuses_list:
+        statuses_list.append({
+            "name": "Nenhum status recente na API",
+            "pic": "",
+            "caption": "Aguardando novas postagens de status"
+        })
+
+    return {"statuses": statuses_list}
 
 @app.get("/get_contacts")
 def get_contacts():
@@ -596,13 +682,6 @@ def get_contacts():
                 })
     except Exception as e:
         print(f"Erro ao buscar contatos: {e}")
-
-    if not contacts_list:
-        contacts_list.append({
-            "id": "5543999999999@s.whatsapp.net",
-            "name": "Exemplo Contato",
-            "pic": ""
-        })
 
     return {"contacts": contacts_list}
 
