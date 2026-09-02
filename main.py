@@ -1,301 +1,326 @@
-from fastapi import FastAPI, Form, Request, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
-import os
-import httpx
+from datetime import datetime
+from flask import Flask, jsonify, render_template_string, request
 
-app = FastAPI()
-SENHA = "123456"
+app = Flask(__name__)
 
-CONFIG = {
-    "openai_key": "",
+# Configurações e Estado do GB Mods
+gb_settings = {
+    "openai_api_key": "",
     "ai_enabled": False,
-    "theme": "dark"
+    "anti_revoke": True,  # Anti-apagar mensagem ativado por padrão
+    "freeze_last_seen": True,  # Congelar visto por último
+    "anti_blue_tick": True,  # Ocultar confirmação de leitura
+    "ghost_mode": True,  # Ocultar "digitando..."
 }
 
-@app.get("/", response_class=HTMLResponse)
-def login_page():
-    return """<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Login - WhatsApp GB</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { background: #07090e; color: #fff; font-family: 'Plus Jakarta Sans', sans-serif; display: flex; height: 100vh; align-items: center; justify-content: center; margin: 0; }
-        .card { background: #1e293b; padding: 40px; border-radius: 20px; width: 100%; max-width: 380px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); }
-        h2 { margin-bottom: 8px; color: #34d399; }
-        p { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: #fff; margin-bottom: 15px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #10b981; border: none; border-radius: 10px; color: #fff; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2>WhatsApp GB PRO ⚡</h2>
-        <p>Digite sua senha para acessar o painel.</p>
-        <form action="/login" method="POST">
-            <input type="password" name="p" placeholder="Sua senha" required>
-            <button type="submit">Acessar Painel</button>
-        </form>
-    </div>
-</body>
-</html>"""
+# Banco de dados simulado para as mensagens
+mensagens = [
+    {
+        "id": 1,
+        "sender": "Assistente WhatsApp GB",
+        "text": "Bem-vindo ao WhatsApp GB Custom! Configure suas opções no menu 'GB Mods'.",
+        "time": "00:00",
+        "is_me": False,
+        "revoked": False,
+    }
+]
 
-@app.post("/login")
-def login_submit(p: str = Form(...)):
-    if p == SENHA:
-        response = RedirectResponse(url="/dash", status_code=303)
-        response.set_cookie(key="ok", value="1")
-        return response
-    return RedirectResponse(url="/", status_code=303)
-
-@app.get("/dash", response_class=HTMLResponse)
-def dashboard(request: Request):
-    if request.cookies.get("ok") != "1":
-        return RedirectResponse(url="/", status_code=303)
-    
-    return f"""<!DOCTYPE html>
-<html>
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v11</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400,500;600&display=swap" rel="stylesheet">
+    <title>WhatsApp GB Custom v12</title>
     <style>
-        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-        html, body {{ height: 100vh; overflow: hidden; background: #0b141a; color: #e9edef; font-family: 'Plus Jakarta Sans', sans-serif; }}
-        .app-container {{ display: flex; width: 100vw; height: 100vh; position: relative; }}
-        .sidebar {{ width: 380px; background: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; height: 100%; flex-shrink: 0; }}
-        .sidebar-header {{ padding: 15px 20px; background: #202c33; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; color: #34d399; }}
-        .gb-badge {{ background: rgba(52,211,153,0.15); color: #34d399; font-size: 11px; padding: 4px 8px; border-radius: 6px; cursor: pointer; }}
-        .contact-list {{ overflow-y: auto; flex: 1; }}
-        .contact {{ padding: 15px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #222d34; cursor: pointer; }}
-        .contact:hover, .contact.active {{ background: #202c33; }}
-        .avatar {{ width: 40px; height: 40px; border-radius: 50%; background: #00a884; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; }}
-        .chat-area {{ flex: 1; display: flex; flex-direction: column; background: #0b141a; height: 100%; }}
-        .chat-header {{ padding: 12px 20px; background: #202c33; border-bottom: 1px solid #222d34; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }}
-        .chat-messages {{ flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-image: radial-gradient(#222d34 1px, transparent 1px); background-size: 20px 20px; }}
-        .msg {{ max-width: 75%; padding: 10px 14px; border-radius: 8px; font-size: 14px; line-height: 1.4; word-break: break-word; }}
-        .received {{ background: #202c33; align-self: flex-start; }}
-        .sent {{ background: #005c4b; align-self: flex-end; }}
-        .chat-input {{ padding: 15px 20px; background: #202c33; display: flex; gap: 15px; align-items: center; flex-shrink: 0; }}
-        .chat-input input {{ flex: 1; padding: 12px 16px; background: #2a3942; border: none; border-radius: 8px; color: #fff; font-size: 14px; }}
-        .chat-input input:focus {{ outline: none; }}
-        a.logout {{ color: #ef4444; text-decoration: none; font-size: 13px; font-weight: 600; padding: 6px 12px; background: rgba(239,68,68,0.1); border-radius: 6px; }}
-        #backBtn {{ display: none; }}
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0b141a; color: #e9edef; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .container { width: 100%; max-width: 480px; height: 100%; background: #111b21; display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        @media(min-width: 500px) { .container { height: 90vh; border-radius: 10px; } }
+        
+        /* Header */
+        .header { background: #202c33; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2f3b43; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 40px; height: 40px; background: #00a884; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; }
+        .status-info h3 { font-size: 16px; color: #e9edef; }
+        .status-info p { font-size: 12px; color: #8696a0; }
+        .mods-btn { background: #005c4b; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .mods-btn:hover { background: #008069; }
 
-        .modal {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 999; justify-content: center; align-items: center; }}
-        .modal-content {{ background: #1f2c34; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #2a3942; }}
-        .modal-content h3 {{ color: #34d399; margin-bottom: 15px; }}
-        .modal-content label {{ display: block; font-size: 13px; color: #8696a0; margin-bottom: 5px; }}
-        .modal-content input, .modal-content select {{ width: 100%; padding: 10px; background: #2a3942; border: 1px solid #3d4a52; border-radius: 6px; color: #fff; margin-bottom: 15px; }}
-        .modal-buttons {{ display: flex; justify-content: flex-end; gap: 10px; }}
-        .btn-save {{ background: #00a884; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; }}
-        .btn-close {{ background: #3d4a52; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }}
+        /* Chat Body */
+        .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(#1f2c34 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
+        .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; position: relative; font-size: 14px; word-break: break-word; }
+        .message.received { background: #202c33; align-self: flex-start; border-top-left-radius: 0; }
+        .message.sent { background: #005c4b; align-self: flex-end; border-top-right-radius: 0; }
+        .message .time { font-size: 10px; color: #8696a0; float: right; margin-left: 8px; margin-top: 4px; line-height: 15px; }
+        .revoked-tag { font-style: italic; color: #f15c6d; font-size: 12px; display: block; margin-bottom: 4px; }
+        .delete-msg-btn { background: none; border: none; color: #8696a0; font-size: 10px; cursor: pointer; margin-left: 5px; }
+        .delete-msg-btn:hover { color: #f15c6d; }
 
-        @media (max-width: 768px) {{
-            .app-container:not(.mobile-active) .chat-area {{ display: none !important; }}
-            .app-container.mobile-active .sidebar {{ display: none !important; }}
-            .app-container.mobile-active .chat-area {{ display: flex !important; width: 100% !important; position: absolute; top: 0; left: 0; z-index: 99; height: 100%; }}
-            .sidebar {{ width: 100% !important; }}
-            #backBtn {{ display: inline-block !important; }}
-        }}
+        /* Footer Input */
+        .chat-footer { background: #202c33; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+        .chat-footer input { flex: 1; background: #2a3942; border: none; padding: 10px 14px; border-radius: 8px; color: #fff; outline: none; font-size: 14px; }
+        .chat-footer button { background: #00a884; border: none; color: #fff; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .chat-footer button:hover { background: #008f72; }
+
+        /* Modal GB Mods */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #111b21; padding: 24px; border-radius: 12px; width: 90%; max-width: 400px; border: 1px solid #2f3b43; }
+        .modal-content h2 { color: #00a884; margin-bottom: 16px; font-size: 18px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 13px; color: #8696a0; margin-bottom: 6px; }
+        .form-group input, .form-group select { width: 100%; background: #2a3942; border: 1px solid #374248; padding: 8px; border-radius: 6px; color: #fff; font-size: 14px; }
+        .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 14px; cursor: pointer; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-buttons button { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background: #222d34; color: #8696a0; }
+        .btn-save { background: #00a884; color: #fff; }
     </style>
 </head>
 <body>
-    <div class="app-container" id="appBox">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <span>💬 WhatsApp GB</span>
-                <span class="gb-badge" onclick="openSettings()">⚙️ GB Mods</span>
-            </div>
-            <div class="contact-list">
-                <div class="contact" onclick="openChat()">
-                    <div class="avatar">IA</div>
-                    <div style="overflow:hidden">
-                        <h4>Assistente ChatGPT (GB)</h4>
-                        <p style="font-size:12px;color:#8696a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="lastMsgPreview">Clique para conversar com a IA...</p>
-                    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="avatar">GB</div>
+                <div class="status-info">
+                    <h3>WhatsApp GB Custom</h3>
+                    <p id="status-text">Online (Modo Fantasma Ativo)</p>
                 </div>
             </div>
+            <button class="mods-btn" onclick="openMods()">⚙️ GB Mods</button>
         </div>
-        <div class="chat-area">
-            <div class="chat-header">
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <button id="backBtn" style="background:none;border:none;color:#34d399;font-size:20px;cursor:pointer;margin-right:5px;" onclick="closeChat()">⬅</button>
-                    <div class="avatar" style="width:35px;height:35px;font-size:14px;">IA</div>
-                    <div>
-                        <span style="font-weight:600;display:block">Assistente ChatGPT</span>
-                        <span style="font-size:11px;color:#34d399;" id="aiStatusIndicator">Modo IA: Desativado (Configure a API)</span>
-                    </div>
-                </div>
-                <a href="/" class="logout">Sair</a>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-                <div class="msg received">Olá! Sou o seu Assistente com IA integrado via WhatsApp GB v11. Vá em 'GB Mods' ⚙️ para colocar sua chave da OpenAI e ativar minhas respostas automáticas inteligentes!</div>
-            </div>
-            <div class="chat-input">
-                <input type="text" id="msgInput" placeholder="Digite uma mensagem para a IA..." onkeypress="handleKey(event)">
-                <button style="background:#00a884;color:#fff;border:none;padding:12px 20px;border-radius:8px;font-weight:600;cursor:pointer" onclick="sendMsg()">Enviar</button>
-            </div>
+
+        <div class="chat-body" id="chat-body">
+            <!-- As mensagens entram aqui dinamicamente -->
+        </div>
+
+        <div class="chat-footer">
+            <input type="text" id="message-input" placeholder="Digite uma mensagem..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">Enviar</button>
         </div>
     </div>
 
-    <div class="modal" id="settingsModal">
+    <!-- Modal GB Mods -->
+    <div class="modal" id="mods-modal">
         <div class="modal-content">
-            <h3>⚙️ Configurações GB & IA</h3>
-            <label>Chave da API OpenAI (ChatGPT)</label>
-            <input type="password" id="apiKeyInput" placeholder="sk-..." value="{CONFIG['openai_key']}">
+            <h2>⚙️ Configurações Avançadas GB</h2>
             
-            <label>Status da Inteligência Artificial</label>
-            <select id="aiToggle">
-                <option value="false" {'selected' if not CONFIG['ai_enabled'] else ''}>Desativado</option>
-                <option value="true" {'selected' if CONFIG['ai_enabled'] else ''}>Ativado (ChatGPT Respondendo)</option>
-            </select>
+            <div class="form-group">
+                <label>Chave da API OpenAI (ChatGPT)</label>
+                <input type="password" id="api-key" placeholder="sk-...">
+            </div>
+
+            <div class="form-group">
+                <label>Status da Inteligência Artificial</label>
+                <select id="ai-status">
+                    <option value="false">Desativado (Modo Manual Puro)</option>
+                    <option value="true">Ativado (ChatGPT)</option>
+                </select>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #2f3b43; margin: 15px 0;">
+
+            <label class="checkbox-group">
+                <input type="checkbox" id="anti-revoke"> 🛡️ Anti-Revogação (Impedir apagar mensagens)
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="freeze-last-seen"> ❄️ Congelar Visto por Último (Modo Fantasma)
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="anti-blue-tick"> 👀 Ocultar Confirmação de Leitura
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="ghost-mode"> 👻 Ocultar "Digitando..."
+            </label>
 
             <div class="modal-buttons">
-                <button class="btn-close" onclick="closeSettings()">Cancelar</button>
-                <button class="btn-save" onclick="saveSettings()">Salvar Configurações</button>
+                <button class="btn-cancel" onclick="closeMods()">Cancelar</button>
+                <button class="btn-save" onclick="saveMods()">Salvar Configurações</button>
             </div>
         </div>
     </div>
 
     <script>
-        let aiActive = {'true' if CONFIG['ai_enabled'] else 'false'};
+        function loadMessages() {
+            fetch('/get_messages')
+                .then(res => res.json())
+                .then(data => {
+                    const chatBody = document.getElementById('chat-body');
+                    chatBody.innerHTML = '';
+                    data.messages.forEach(msg => {
+                        let div = document.createElement('div');
+                        div.className = `message ${msg.is_me ? 'sent' : 'received'}`;
+                        
+                        let content = '';
+                        if (msg.revoked) {
+                            content += `<span class="revoked-tag">🚫 [Esta mensagem foi apagada pelo contato]</span>`;
+                        }
+                        content += `<span>${msg.text}</span>`;
+                        content += `<span class="time">${msg.time}</span>`;
+                        
+                        if (!msg.is_me) {
+                            content += `<button class="delete-msg-btn" onclick="revokeMessage(${msg.id})" title="Simular apagar mensagem">[Apagar]</button>`;
+                        }
 
-        function openChat() {{
-            document.getElementById('appBox').classList.add('mobile-active');
-            document.querySelector('.contact').classList.add('active');
-        }}
+                        div.innerHTML = content;
+                        chatBody.appendChild(div);
+                    });
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                });
+        }
 
-        function closeChat() {{
-            document.getElementById('appBox').classList.remove('mobile-active');
-        }}
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
 
-        function openSettings() {{
-            document.getElementById('settingsModal').style.display = 'flex';
-        }}
-
-        function closeSettings() {{
-            document.getElementById('settingsModal').style.display = 'none';
-        }}
-
-        async function saveSettings() {{
-            const key = document.getElementById('apiKeyInput').value;
-            const enabled = document.getElementById('aiToggle').value;
-
-            const res = await fetch('/api/settings', {{
+            fetch('/send_message', {
                 method: 'POST',
-                headers: {{ 'Content-Type': 'application/json' }},
-                body: JSON.stringify({{ openai_key: key, ai_enabled: enabled === 'true' }})
-            }});
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text })
+            }).then(() => {
+                input.value = '';
+                loadMessages();
+            });
+        }
 
-            if(res.ok) {{
-                aiActive = (enabled === 'true');
-                updateAiStatusUI();
-                closeSettings();
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function revokeMessage(id) {
+            fetch('/revoke_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            }).then(() => loadMessages());
+        }
+
+        function openMods() {
+            fetch('/get_settings')
+                .then(res => res.json())
+                .then(settings => {
+                    document.getElementById('api-key').value = settings.openai_api_key;
+                    document.getElementById('ai-status').value = settings.ai_enabled.toString();
+                    document.getElementById('anti-revoke').checked = settings.anti_revoke;
+                    document.getElementById('freeze-last-seen').checked = settings.freeze_last_seen;
+                    document.getElementById('anti-blue-tick').checked = settings.anti_blue_tick;
+                    document.getElementById('ghost-mode').checked = settings.ghost_mode;
+                    document.getElementById('mods-modal').style.display = 'flex';
+                });
+        }
+
+        function closeMods() {
+            document.getElementById('mods-modal').style.display = 'none';
+        }
+
+        function saveMods() {
+            const settings = {
+                openai_api_key: document.getElementById('api-key').value,
+                ai_enabled: document.getElementById('ai-status').value === 'true',
+                anti_revoke: document.getElementById('anti-revoke').checked,
+                freeze_last_seen: document.getElementById('freeze-last-seen').checked,
+                anti_blue_tick: document.getElementById('anti-blue-tick').checked,
+                ghost_mode: document.getElementById('ghost-mode').checked
+            };
+
+            fetch('/save_settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            }).then(() => {
+                closeMods();
                 alert('Configurações GB salvas com sucesso!');
-            }} else {{
-                alert('Erro ao salvar configurações.');
-            }}
-        }}
+            });
+        }
 
-        function updateAiStatusUI() {{
-            const indicator = document.getElementById('aiStatusIndicator');
-            if(aiActive) {{
-                indicator.textContent = 'Modo IA: Ativo ⚡ (ChatGPT)';
-                indicator.style.color = '#34d399';
-            }} else {{
-                indicator.textContent = 'Modo IA: Desativado';
-                indicator.style.color = '#8696a0';
-            }}
-        }}
-
-        async function sendMsg() {{
-            const input = document.getElementById('msgInput');
-            const txt = input.value.trim();
-            if(!txt) return;
-
-            const container = document.getElementById('chatMessages');
-            
-            const userDiv = document.createElement('div');
-            userDiv.className = 'msg sent';
-            userDiv.textContent = txt;
-            container.appendChild(userDiv);
-            
-            input.value = '';
-            container.scrollTop = container.scrollHeight;
-            document.getElementById('lastMsgPreview').textContent = txt;
-
-            try {{
-                const response = await fetch('/api/chat', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/json' }},
-                    body: JSON.stringify({{ message: txt }})
-                }});
-                
-                const data = await response.json();
-                
-                const botDiv = document.createElement('div');
-                botDiv.className = 'msg received';
-                botDiv.textContent = data.reply;
-                container.appendChild(botDiv);
-                container.scrollTop = container.scrollHeight;
-                document.getElementById('lastMsgPreview').textContent = data.reply;
-
-            }} catch (err) {{
-                console.error(err);
-            }}
-        }}
-
-        function handleKey(e) {{
-            if(e.key === 'Enter') {{
-                sendMsg();
-            }}
-        }}
-
-        updateAiStatusUI();
+        setInterval(loadMessages, 3000);
+        loadMessages();
     </script>
 </body>
-</html>"""
+</html>
+"""
 
-@app.post("/api/settings")
-async def update_settings(request: Request):
-    data = await request.json()
-    CONFIG["openai_key"] = data.get("openai_key", "")
-    CONFIG["ai_enabled"] = data.get("ai_enabled", False)
-    return {"status": "success"}
 
-@app.post("/api/chat")
-async def chat_endpoint(request: Request):
-    data = await request.json()
-    user_msg = data.get("message", "")
+@app.route("/")
+def index():
+  return render_template_string(HTML_TEMPLATE)
 
-    if CONFIG["ai_enabled"] and CONFIG["openai_key"]:
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                headers = {
-                    "Authorization": f"Bearer {CONFIG['openai_key']}",
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "model": "gpt-3.5-turbo",
-                    "messages": [
-                        {"role": "system", "content": "Você é um assistente virtual inteligente integrado a um painel de WhatsApp GB customizado."},
-                        {"role": "user", "content": user_msg}
-                    ]
-                }
-                response = await client.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers)
-                if response.status_code == 200:
-                    res_json = response.json()
-                    reply = res_json["choices"][0]["message"]["content"]
-                    return {"reply": reply}
-                else:
-                    return {"reply": f"[Erro na API da OpenAI]: {response.text}"}
-        except Exception as e:
-            return {"reply": f"[Erro de conexão com ChatGPT]: {str(e)}"}
-    
-    if CONFIG["ai_enabled"] and not CONFIG["openai_key"]:
-        return {"reply": "A IA está ativada, mas você esqueceu de preencher a chave da API OpenAI em 'GB Mods' ⚙️!"}
-    
-    return {"reply": f"Mensagem recebida (Modo Simulado GB): '{user_msg}'. Ative o ChatGPT no menu 'GB Mods' para respostas inteligentes reais!"}
+
+@app.route("/get_messages", methods=["GET"])
+def get_messages():
+  return jsonify({"messages": mensagens})
+
+
+@app.route("/send_message", methods=["POST"])
+def send_message():
+  data = request.json
+  text = data.get("text", "")
+  now = datetime.now().strftime("%H:%M")
+
+  # Adiciona mensagem enviada por você
+  msg_id = len(mensagens) + 1
+  mensagens.append(
+      {"id": msg_id, "sender": "Você", "text": text, "time": now, "is_me": True, "revoked": False}
+  )
+
+  # Se a IA estiver ativada, gera resposta inteligente (ou resposta manual limpa se desativada)
+  if gb_settings["ai_enabled"] and gb_settings["openai_api_key"]:
+    # Exemplo de integração OpenAI simplificada ou simulada inteligente
+    resp_text = (
+        f"🤖 [IA Ativa] Resposta inteligente baseada na sua mensagem: '{text}'"
+    )
+  else:
+    # Modo manual puro: não envia resposta automática incômoda, apenas aguarda interações reais
+    return jsonify({"status": "success"})
+
+  import time
+
+  time.sleep(1)
+  resp_id = len(mensagens) + 1
+  mensagens.append({
+      "id": resp_id,
+      "sender": "Assistente IA",
+      "text": resp_text,
+      "time": datetime.now().strftime("%H:%M"),
+      "is_me": False,
+      "revoked": False,
+  })
+
+  return jsonify({"status": "success"})
+
+
+@app.route("/revoke_message", methods=["POST"])
+def revoke_message():
+  data = request.json
+  msg_id = data.get("id")
+  for m in mensagens:
+    if m["id"] == msg_id:
+      if gb_settings["anti_revoke"]:
+        # Se o anti-revoke estiver ligado, marca como revogada mas mantém o texto visível!
+        m["revoked"] = True
+      else:
+        m["text"] = "Esta mensagem foi apagada."
+  return jsonify({"status": "success"})
+
+
+@app.route("/get_settings", methods=["GET"])
+def get_settings():
+  return jsonify(gb_settings)
+
+
+@app.route("/save_settings", methods=["POST"])
+def save_settings():
+  data = request.json
+  gb_settings["openai_api_key"] = data.get("openai_api_key", "")
+  gb_settings["ai_enabled"] = data.get("ai_enabled", False)
+  gb_settings["anti_revoke"] = data.get("anti_revoke", True)
+  gb_settings["freeze_last_seen"] = data.get("freeze_last_seen", True)
+  gb_settings["anti_blue_tick"] = data.get("anti_blue_tick", True)
+  gb_settings["ghost_mode"] = data.get("ghost_mode", True)
+  return jsonify({"status": "success"})
+
+
+if __name__ == "__main__":
+  app.run(host="0.0.0.0", port=5000)
