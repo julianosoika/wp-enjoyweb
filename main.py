@@ -716,14 +716,27 @@ def get_messages(chat_id: str):
         response = requests.post(url, json=payload, headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
-            messages_data = data if isinstance(data, list) else (data.get("messages", {}).get("records", []) or data.get("messages", []) or [])
-            for m in messages_data:
-                msg_obj = m.get("message", {})
-                body = msg_obj.get("conversation") or msg_obj.get("extendedTextMessage", {}).get("text") or "[Mídia]"
-                from_me = m.get("key", {}).get("fromMe", False)
-                timestamp = m.get("messageTimestamp", 0)
-                time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
-                msgs.append({"text": str(body), "is_me": from_me, "time": time_str})
+            if data:
+                messages_data = []
+                if isinstance(data, list):
+                    messages_data = data
+                elif isinstance(data, dict):
+                    msg_container = data.get("messages")
+                    if isinstance(msg_container, dict):
+                        messages_data = msg_container.get("records", []) or []
+                    elif isinstance(msg_container, list):
+                        messages_data = msg_container
+
+                for m in messages_data:
+                    if not isinstance(m, dict):
+                        continue
+                    msg_obj = m.get("message") or {}
+                    body = msg_obj.get("conversation") or msg_obj.get("extendedTextMessage", {}).get("text") or "[Mídia]"
+                    key_obj = m.get("key") or {}
+                    from_me = key_obj.get("fromMe", False)
+                    timestamp = m.get("messageTimestamp", 0)
+                    time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
+                    msgs.append({"text": str(body), "is_me": from_me, "time": time_str})
     except Exception as e:
         print(f"Erro msgs: {e}")
     return {"messages": msgs}
