@@ -115,7 +115,6 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Botões Flutuantes Alinhados */
         .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #111; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
         .radio-fab-btn { position: absolute; bottom: 76px; right: 20px; background: #22c55e; color: #fff; width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
         
@@ -627,11 +626,14 @@ def get_profile():
     name = INSTANCE_NAME
     pic = ""
     try:
-        url_pic = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
-        res_pic = requests.post(url_pic, json={"number": INSTANCE_NAME}, headers=headers, timeout=1.5)
+        url_pic = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}?number={INSTANCE_NAME}"
+        res_pic = requests.get(url_pic, headers=headers, timeout=2)
+        if res_pic.status_code != 200:
+            res_pic = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": INSTANCE_NAME}, headers=headers, timeout=2)
+            
         if res_pic.status_code == 200:
             data = res_pic.json()
-            pic = data.get("profilePictureUrl") or data.get("pictureUrl") or ""
+            pic = data.get("profilePictureUrl") or data.get("pictureUrl") or data.get("url") or ""
     except Exception:
         pass
     return {"name": name, "pic": pic}
@@ -653,14 +655,7 @@ def get_chats():
                 if not jid: continue
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
                 
-                pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
-                if not pic and "@s.whatsapp.net" in jid:
-                    try:
-                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=1)
-                        if p_res.status_code == 200:
-                            pic = p_res.json().get("profilePictureUrl") or p_res.json().get("pictureUrl", "")
-                    except:
-                        pass
+                pic = c.get("profilePictureUrl") or c.get("pictureUrl") or c.get("imageUrl") or ""
 
                 last_message = c.get("lastMessage", {})
                 last_text = last_message.get("conversation") or last_message.get("text") or "Conversa ativa"
@@ -682,19 +677,12 @@ def get_contacts():
             
         if res.status_code == 200:
             data = res.json()
-            items = data if isinstance(data, list) else (data.get("contacts") or data.get("records") or [])
+            items = data if isinstance(data, list) else (data.get("contacts") or data.get("records") or data.get("data") or [])
             for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
                 
-                pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
-                if not pic and "@s.whatsapp.net" in jid:
-                    try:
-                        p_res = requests.post(f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}", json={"number": jid}, headers=headers, timeout=1)
-                        if p_res.status_code == 200:
-                            pic = p_res.json().get("profilePictureUrl") or p_res.json().get("pictureUrl", "")
-                    except:
-                        pass
+                pic = c.get("profilePictureUrl") or c.get("pictureUrl") or c.get("imageUrl") or ""
 
                 contacts_list.append({"id": jid, "name": name, "pic": pic})
     except Exception as e:
