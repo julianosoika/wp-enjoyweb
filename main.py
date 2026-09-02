@@ -32,12 +32,8 @@ gb_settings = {
 }
 
 class MessageModel(BaseModel):
-    chat_id: str  # Número do WhatsApp ou ID do chat
-    text: str
-
-class RevokeModel(BaseModel):
     chat_id: str
-    msg_id: str
+    text: str
 
 class SettingsModel(BaseModel):
     openai_api_key: str
@@ -76,62 +72,29 @@ HTML_TEMPLATE = """
             --accent-color: #00a884;
             --hover-item: #2a3942;
         }
-
         [data-theme="midnight-blue"] {
-            --bg-color: #050b14;
-            --container-bg: #0d1b2a;
-            --header-bg: #1b263b;
-            --border-color: #415a77;
-            --sent-bg: #1d3557;
-            --received-bg: #1b263b;
-            --accent-color: #457b9d;
-            --hover-item: #1b263b;
+            --bg-color: #050b14; --container-bg: #0d1b2a; --header-bg: #1b263b; --border-color: #415a77; --sent-bg: #1d3557; --received-bg: #1b263b; --accent-color: #457b9d; --hover-item: #1b263b;
         }
-
         [data-theme="neon-purple"] {
-            --bg-color: #0f051d;
-            --container-bg: #1a0b2e;
-            --header-bg: #2b124c;
-            --border-color: #4d1c8c;
-            --sent-bg: #6b21a8;
-            --received-bg: #2b124c;
-            --accent-color: #a855f7;
-            --hover-item: #3b1868;
+            --bg-color: #0f051d; --container-bg: #1a0b2e; --header-bg: #2b124c; --border-color: #4d1c8c; --sent-bg: #6b21a8; --received-bg: #2b124c; --accent-color: #a855f7; --hover-item: #3b1868;
         }
-
         [data-theme="light"] {
-            --bg-color: #eae6df;
-            --container-bg: #ffffff;
-            --header-bg: #00a884;
-            --border-color: #d1d7db;
-            --text-primary: #111b21;
-            --text-secondary: #667781;
-            --sent-bg: #d9fdd3;
-            --received-bg: #ffffff;
-            --accent-color: #00a884;
-            --hover-item: #f5f6f6;
+            --bg-color: #eae6df; --container-bg: #ffffff; --header-bg: #00a884; --border-color: #d1d7db; --text-primary: #111b21; --text-secondary: #667781; --sent-bg: #d9fdd3; --received-bg: #ffffff; --accent-color: #00a884; --hover-item: #f5f6f6;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; transition: 0.3s; }
         .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; }
         @media(min-width: 500px) { .container { height: 92vh; border-radius: 12px; } }
-        
-        /* Header */
         .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; }
         .header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-        .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; }
+        .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .status-info h3 { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-info p { font-size: 11px; color: var(--text-secondary); }
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
         .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
-        .mods-btn:hover, .status-tab-btn:hover, .back-btn:hover { opacity: 0.85; }
-
-        /* Views */
         .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .hidden { display: none !important; }
-
-        /* Home Chat List View */
         .chat-list-body { flex: 1; overflow-y: auto; background: var(--container-bg); }
         .chat-item { display: flex; align-items: center; padding: 12px 16px; gap: 12px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: 0.2s; }
         .chat-item:hover { background: var(--hover-item); }
@@ -139,34 +102,26 @@ HTML_TEMPLATE = """
         .chat-item-info h4 { font-size: 14px; color: var(--text-primary); margin-bottom: 3px; display: flex; justify-content: space-between; }
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* Chat Body */
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; background-image: radial-gradient(var(--border-color) 1px, transparent 1px); background-size: 20px 20px; display: flex; flex-direction: column; gap: 8px; }
         .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; position: relative; font-size: 14px; word-break: break-word; color: var(--text-primary); }
         .message.received { background: var(--received-bg); align-self: flex-start; border-top-left-radius: 0; border: 1px solid var(--border-color); }
         .message.sent { background: var(--sent-bg); align-self: flex-end; border-top-right-radius: 0; }
         .message .time { font-size: 10px; color: var(--text-secondary); float: right; margin-left: 8px; margin-top: 4px; line-height: 15px; }
-
-        /* Secondary Bodies (Status / Schedule) */
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         .status-card { background: var(--header-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .status-card img, .status-card video { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
+        .status-card img { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; }
         .status-info-box h4 { font-size: 14px; color: var(--text-primary); }
         .status-info-box span { font-size: 11px; color: var(--text-secondary); }
         .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold; }
-
-        /* Footer Input */
         .chat-footer { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); }
         .chat-footer input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; color: var(--text-primary); outline: none; font-size: 14px; }
         .chat-footer button { background: var(--accent-color); border: none; color: #fff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-
-        /* Modal GB Mods */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; }
         .modal-content { background: var(--container-bg); padding: 20px; border-radius: 12px; width: 92%; max-width: 420px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
         .modal-content h2 { color: var(--accent-color); margin-bottom: 14px; font-size: 17px; }
         .form-group { margin-bottom: 12px; }
         .form-group label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; background: var(--bg-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+        .form-group input, .form-group select { width: 100%; background: var(--bg-color); border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; color: var(--text-primary); font-size: 13px; }
         .checkbox-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary); }
         .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
         .modal-buttons button { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
@@ -175,9 +130,7 @@ HTML_TEMPLATE = """
     </style>
 </head>
 <body data-theme="dark-oled">
-
     <div class="container">
-        <!-- Header Dinâmico -->
         <div class="header">
             <div class="header-left" id="header-left-content">
                 <div class="avatar">EB</div>
@@ -193,12 +146,10 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
-        <!-- View 1: Lista de Conversas (Home) -->
         <div id="home-view" class="view-section">
             <div class="chat-list-body" id="chat-list"></div>
         </div>
 
-        <!-- View 2: Tela de Chat Individual -->
         <div id="chat-view" class="view-section hidden">
             <div class="chat-body" id="chat-body"></div>
             <div class="chat-footer">
@@ -207,7 +158,6 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
-        <!-- View 3: Status Viewer -->
         <div id="status-view" class="view-section hidden">
             <div class="sub-body">
                 <h3 style="font-size: 15px; color: var(--accent-color); margin-bottom: 4px;">Status de Contatos (GB Downloader)</h3>
@@ -222,7 +172,6 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
-        <!-- View 4: Agendador de Mensagens -->
         <div id="schedule-view" class="view-section hidden">
             <div class="sub-body">
                 <h3 style="font-size: 15px; color: var(--accent-color);">⏰ Agendador de Disparos</h3>
@@ -244,11 +193,9 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- Modal GB Mods -->
     <div class="modal" id="mods-modal">
         <div class="modal-content">
             <h2>⚙️ Painel GB Mods v13</h2>
-            
             <div class="form-group">
                 <label>Tema Visual e Cores</label>
                 <select id="theme-select">
@@ -258,12 +205,10 @@ HTML_TEMPLATE = """
                     <option value="light">Modo Claro Clássico</option>
                 </select>
             </div>
-
             <div class="form-group">
                 <label>Chave da API OpenAI (ChatGPT)</label>
                 <input type="password" id="api-key" placeholder="sk-...">
             </div>
-
             <div class="form-group">
                 <label>Status da Inteligência Artificial</label>
                 <select id="ai-status">
@@ -271,33 +216,17 @@ HTML_TEMPLATE = """
                     <option value="true">Ativado (ChatGPT)</option>
                 </select>
             </div>
-
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 12px 0;">
-
             <div class="form-group">
                 <label>Mensagem Automática de Ausência (Auto-Reply)</label>
                 <input type="text" id="auto-reply-text">
             </div>
-
-            <label class="checkbox-group">
-                <input type="checkbox" id="auto-reply-enabled"> 🤖 Ativar Resposta Automática
-            </label>
-            <label class="checkbox-group">
-                <input type="checkbox" id="lossless-media"> 📷 Enviar Mídia em Qualidade Máxima
-            </label>
-            <label class="checkbox-group">
-                <input type="checkbox" id="anti-revoke"> 🛡️ Anti-Revogação (Impedir apagar mensagens)
-            </label>
-            <label class="checkbox-group">
-                <input type="checkbox" id="freeze-last-seen"> ❄️ Congelar Visto por Último
-            </label>
-            <label class="checkbox-group">
-                <input type="checkbox" id="anti-blue-tick"> 👀 Ocultar Confirmação de Leitura
-            </label>
-            <label class="checkbox-group">
-                <input type="checkbox" id="ghost-mode"> 👻 Ocultar "Digitando..."
-            </label>
-
+            <label class="checkbox-group"><input type="checkbox" id="auto-reply-enabled"> 🤖 Ativar Resposta Automática</label>
+            <label class="checkbox-group"><input type="checkbox" id="lossless-media"> 📷 Enviar Mídia em Qualidade Máxima</label>
+            <label class="checkbox-group"><input type="checkbox" id="anti-revoke"> 🛡️ Anti-Revogação (Impedir apagar mensagens)</label>
+            <label class="checkbox-group"><input type="checkbox" id="freeze-last-seen"> ❄️ Congelar Visto por Último</label>
+            <label class="checkbox-group"><input type="checkbox" id="anti-blue-tick"> 👀 Ocultar Confirmação de Leitura</label>
+            <label class="checkbox-group"><input type="checkbox" id="ghost-mode"> 👻 Ocultar "Digitando..."</label>
             <div class="modal-buttons">
                 <button class="btn-cancel" onclick="closeMods()">Cancelar</button>
                 <button class="btn-save" onclick="saveMods()">Salvar Alterações</button>
@@ -339,11 +268,7 @@ HTML_TEMPLATE = """
             } else if (view === 'status' || view === 'schedule') {
                 if (view === 'status') document.getElementById('status-view').classList.remove('hidden');
                 if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
-                
-                headerLeft.innerHTML = `
-                    <div class="status-info">
-                        <h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3>
-                    </div>`;
+                headerLeft.innerHTML = `<div class="status-info"><h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3></div>`;
                 headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
             }
         }
@@ -363,15 +288,16 @@ HTML_TEMPLATE = """
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (chats.length === 0) {
-                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum chat recente encontrado na instância.</div>';
+                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Nenhum chat encontrado.</div>';
                 return;
             }
             chats.forEach(chat => {
                 let div = document.createElement('div');
                 div.className = 'chat-item';
-                div.onclick = () => openChat(chat.id, chat.name);
+                div.onclick = () => openChat(chat.id, chat.name, chat.pic);
+                let avatarHTML = chat.pic ? `<img src="${chat.pic}" alt="Avatar">` : chat.name.substring(0,2).toUpperCase();
                 div.innerHTML = `
-                    <div class="avatar">${chat.name.substring(0,2).toUpperCase()}</div>
+                    <div class="avatar">${avatarHTML}</div>
                     <div class="chat-item-info">
                         <h4>${chat.name} <span>${chat.time || ''}</span></h4>
                         <p>${chat.last_msg || chat.id}</p>
@@ -381,11 +307,12 @@ HTML_TEMPLATE = """
             });
         }
 
-        function openChat(id, name) {
+        function openChat(id, name, pic) {
             currentChatId = id;
             currentChatName = name;
+            let avatarHTML = pic ? `<img src="${pic}" alt="Avatar">` : name.substring(0,2).toUpperCase();
             document.getElementById('header-left-content').innerHTML = `
-                <div class="avatar">${name.substring(0,2).toUpperCase()}</div>
+                <div class="avatar">${avatarHTML}</div>
                 <div class="status-info">
                     <h3>${name}</h3>
                     <p>${id}</p>
@@ -400,6 +327,10 @@ HTML_TEMPLATE = """
                 .then(data => {
                     const chatBody = document.getElementById('chat-body');
                     chatBody.innerHTML = '';
+                    if(data.messages.length === 0) {
+                        chatBody.innerHTML = '<div style="text-align:center; color:var(--text-secondary); margin-top:20px;">Nenhuma mensagem neste chat ainda.</div>';
+                        return;
+                    }
                     data.messages.forEach(msg => {
                         let div = document.createElement('div');
                         div.className = `message ${msg.is_me ? 'sent' : 'received'}`;
@@ -476,7 +407,6 @@ HTML_TEMPLATE = """
                 anti_blue_tick: document.getElementById('anti-blue-tick').checked,
                 ghost_mode: document.getElementById('ghost-mode').checked
             };
-
             fetch('/save_settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -510,30 +440,26 @@ def index():
 def get_chats():
     chats_list = []
     try:
-        # Busca os chats reais conectados na Evolution API da instância EnjoyWeb
+        # Busca os chats reais na Evolution API v2.3.7
         url = f"{EVOLUTION_URL}/chat/findChats/{INSTANCE_NAME}"
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=6)
         if response.status_code == 200:
             data = response.json()
             items = data if isinstance(data, list) else data.get("chats", [])
             for c in items:
                 jid = c.get("id") or c.get("remoteJid", "")
                 name = c.get("name") or c.get("pushName") or jid.split("@")[0]
-                last_msg = c.get("lastMessage", {}).get("message", {}).get("conversation", "Mensagem recente") if isinstance(c.get("lastMessage"), dict) else "Conversa ativa"
+                pic = c.get("profilePictureUrl") or c.get("pictureUrl", "")
+                last_msg = "Conversa ativa"
                 chats_list.append({
                     "id": jid,
                     "name": name,
                     "last_msg": str(last_msg),
+                    "pic": pic,
                     "time": ""
                 })
     except Exception as e:
-        print(f"Erro ao buscar chats da Evolution: {e}")
-
-    # Fallback se a API demorar ou retornar vazio para testes rápidos
-    if not chats_list:
-        chats_list = [
-            {"id": "554399999999@s.whatsapp.net", "name": "Exemplo Contato", "last_msg": "Olá via Evolution API", "time": "Agora"}
-        ]
+        print(f"Erro ao buscar chats: {e}")
 
     return {
         "chats": chats_list,
@@ -546,7 +472,7 @@ def get_messages(chat_id: str):
     try:
         url = f"{EVOLUTION_URL}/chat/findMessages/{INSTANCE_NAME}"
         payload = {"where": {"remoteJid": chat_id}}
-        response = requests.post(url, json=payload, headers=headers, timeout=5)
+        response = requests.post(url, json=payload, headers=headers, timeout=6)
         if response.status_code == 200:
             data = response.json()
             messages_data = data if isinstance(data, list) else data.get("messages", {}).get("records", [])
@@ -562,9 +488,6 @@ def get_messages(chat_id: str):
                 })
     except Exception as e:
         print(f"Erro ao buscar mensagens: {e}")
-
-    if not msgs:
-        msgs.append({"text": "Conectado com sucesso à Evolution API (EnjoyWeb). Envie uma mensagem abaixo!", "is_me": False, "time": datetime.now().strftime("%H:%M")})
 
     return {"messages": msgs}
 
@@ -595,7 +518,7 @@ async def schedule_message(data: ScheduleModel):
             }
             requests.post(url, json=payload, headers=headers, timeout=10)
         except Exception as e:
-            print(f"Erro no agendamiento: {e}")
+            print(f"Erro no agendamento: {e}")
     
     asyncio.create_task(delayed_task())
     return {"status": f"Mensagem agendada com sucesso para daqui a {data.delay_seconds} segundos!"}
