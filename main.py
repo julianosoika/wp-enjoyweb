@@ -56,7 +56,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp GB Custom v14 - Evolution API</title>
+    <title>WhatsApp GB Custom v15 - Evolution API</title>
     <style>
         :root {
             --bg-color: #0b141a;
@@ -73,6 +73,15 @@ HTML_TEMPLATE = """
         [data-theme="light"] {
             --bg-color: #eae6df; --container-bg: #ffffff; --header-bg: #00a884; --border-color: #d1d7db; --text-primary: #111b21; --text-secondary: #667781; --sent-bg: #d9fdd3; --received-bg: #ffffff; --accent-color: #00a884; --hover-item: #f5f6f6;
         }
+        [data-theme="lime-black"] {
+            --bg-color: #0a0a0a; --container-bg: #121212; --header-bg: #1a1a1a; --border-color: #282828; --text-primary: #ffffff; --text-secondary: #a3a3a3; --sent-bg: #22c55e; --received-bg: #1f1f1f; --accent-color: #39ff14; --hover-item: #222222;
+        }
+        [data-theme="yellow-black"] {
+            --bg-color: #0a0a0a; --container-bg: #121212; --header-bg: #1a1a1a; --border-color: #282828; --text-primary: #ffffff; --text-secondary: #a3a3a3; --sent-bg: #ca8a04; --received-bg: #1f1f1f; --accent-color: #ffe600; --hover-item: #222222;
+        }
+        [data-theme="blue-yellow"] {
+            --bg-color: #0f172a; --container-bg: #1e293b; --header-bg: #0f172a; --border-color: #334155; --text-primary: #f8fafc; --text-secondary: #94a3b8; --sent-bg: #00a2ff; --received-bg: #334155; --accent-color: #ffcc00; --hover-item: #3b82f6;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-primary); display: flex; justify-content: center; align-items: center; height: 100vh; }
         .container { width: 100%; max-width: 480px; height: 100%; background: var(--container-bg); display: flex; flex-direction: column; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow: hidden; }
@@ -80,17 +89,17 @@ HTML_TEMPLATE = """
         
         .header { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); min-height: 65px; }
         .header-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-        .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #fff; flex-shrink: 0; overflow: hidden; }
+        .avatar { width: 40px; height: 40px; background: var(--accent-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #111; flex-shrink: 0; overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .status-info h3 { font-size: 15px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .status-info p { font-size: 11px; color: var(--text-secondary); }
         .header-btns { display: flex; gap: 4px; flex-shrink: 0; }
-        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; }
+        .mods-btn, .status-tab-btn, .back-btn { background: var(--accent-color); color: #111; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; }
         
         .bottom-nav { background: var(--header-bg); border-top: 1px solid var(--border-color); display: flex; overflow-x: auto; padding: 6px 4px; gap: 4px; white-space: nowrap; }
         .bottom-nav::-webkit-scrollbar { display: none; }
         .nav-item { background: transparent; border: none; color: var(--text-secondary); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: 0.2s; flex-shrink: 0; }
-        .nav-item:hover, .nav-item.active { background: var(--accent-color); color: #fff; }
+        .nav-item:hover, .nav-item.active { background: var(--accent-color); color: #111; }
 
         .view-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .hidden { display: none !important; }
@@ -102,39 +111,38 @@ HTML_TEMPLATE = """
         .chat-item-info h4 span { font-size: 11px; color: var(--text-secondary); font-weight: normal; }
         .chat-item-info p { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #fff; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; }
+        .fab-btn { position: absolute; bottom: 20px; right: 20px; background: var(--accent-color); color: #111; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); border: none; z-index: 10; font-weight: bold; }
         
         .chat-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
         .message { max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14px; word-break: break-word; color: var(--text-primary); }
         .message.received { background: var(--received-bg); align-self: flex-start; border: 1px solid var(--border-color); }
-        .message.sent { background: var(--sent-bg); align-self: flex-end; }
+        .message.sent { background: var(--sent-bg); align-self: flex-end; color: #fff; }
         .message .time { font-size: 10px; color: var(--text-secondary); float: right; margin-left: 8px; margin-top: 4px; }
         
         .sub-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .download-btn { background: var(--accent-color); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
+        .download-btn { background: var(--accent-color); color: #111; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; }
         
-        /* Estilos do Player de Rádio Animado */
-        .radio-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 20px; background: radial-gradient(circle, #1a2a3a 0%, #0b141a 100%); }
-        .radio-disc { width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(45deg, #111, #333, #111); border: 4px solid var(--accent-color); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0,168,132,0.4); margin-bottom: 20px; position: relative; }
-        .radio-disc.playing { animation: spin 4s linear infinite; }
-        .radio-disc::after { content: ''; width: 25px; height: 25px; background: var(--accent-color); border-radius: 50%; border: 3px solid #111; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .equalizer { display: flex; align-items: flex-end; gap: 4px; height: 30px; margin-bottom: 20px; }
-        .bar { width: 6px; background: var(--accent-color); border-radius: 3px; height: 5px; transition: height 0.2s; }
-        .playing-bars .bar { animation: bounce 0.8s ease-in-out infinite alternate; }
-        .playing-bars .bar:nth-child(2) { animation-delay: 0.2s; }
-        .playing-bars .bar:nth-child(3) { animation-delay: 0.4s; }
-        .playing-bars .bar:nth-child(4) { animation-delay: 0.1s; }
-        .playing-bars .bar:nth-child(5) { animation-delay: 0.3s; }
-        @keyframes bounce { 0% { height: 5px; } 100% { height: 28px; } }
+        /* Estilos do Troca Fitas Retro (Cassete Player) */
+        .radio-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 15px; background: radial-gradient(circle, #1a2228 0%, #0b141a 100%); }
+        .cassette { width: 260px; height: 160px; background: linear-gradient(135deg, #2a2f35 0%, #15191d 100%); border: 3px solid var(--accent-color); border-radius: 12px; box-shadow: 0 8px 25px rgba(0,0,0,0.7); display: flex; flex-direction: column; justify-content: space-between; padding: 12px; position: relative; margin-bottom: 15px; }
+        .cassette-label { background: #e2e8f0; color: #0f172a; font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; text-align: center; letter-spacing: 1px; }
+        .cassette-window { background: #0b141a; border: 2px solid #475569; border-radius: 8px; height: 65px; display: flex; align-items: center; justify-content: space-around; padding: 0 20px; position: relative; }
+        .reel { width: 42px; height: 42px; border: 4px dashed #94a3b8; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #1e293b; }
+        .reel-center { width: 14px; height: 14px; background: #cbd5e1; border-radius: 50%; }
+        .playing-reel { animation: spinReel 2s linear infinite; }
+        @keyframes spinReel { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tape-bridge { position: absolute; bottom: 8px; width: 60px; height: 6px; background: #334155; border-radius: 3px; }
 
-        .radio-btn { background: var(--accent-color); color: #fff; border: none; padding: 12px 24px; border-radius: 30px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,168,132,0.4); transition: 0.2s; }
+        .volume-control { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; width: 220px; background: var(--header-bg); padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); }
+        .volume-control span { font-size: 12px; color: var(--text-secondary); }
+        .volume-control input { flex: 1; accent-color: var(--accent-color); cursor: pointer; }
+
+        .radio-btn { background: var(--accent-color); color: #111; border: none; padding: 10px 22px; border-radius: 30px; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.4); transition: 0.2s; }
         .radio-btn:hover { transform: scale(1.05); }
 
         .chat-footer { background: var(--header-bg); padding: 10px 16px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border-color); }
         .chat-footer input { flex: 1; background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px 14px; border-radius: 8px; color: var(--text-primary); outline: none; font-size: 14px; }
-        .chat-footer button { background: var(--accent-color); border: none; color: #fff; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .chat-footer button { background: var(--accent-color); border: none; color: #111; padding: 10px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: var(--container-bg); padding: 20px; border-radius: 12px; width: 92%; max-width: 420px; border: 1px solid var(--border-color); max-height: 85vh; overflow-y: auto; }
@@ -145,7 +153,7 @@ HTML_TEMPLATE = """
         .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
         .modal-buttons button { padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; font-size: 13px; }
         .btn-cancel { background: #334155; color: #cbd5e1; }
-        .btn-save { background: var(--accent-color); color: #fff; }
+        .btn-save { background: var(--accent-color); color: #111; }
     </style>
 </head>
 <body data-theme="dark-oled" onload="initApp()">
@@ -166,7 +174,7 @@ HTML_TEMPLATE = """
         <div id="home-view" class="view-section">
             <div class="chat-list-body" id="chat-list">
                 <div style="padding: 30px; text-align: center;">
-                    <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Carregando conversas recentes...</p>
+                    <p style="color: var(--text-secondary); font-size: 13px;">Carregando conversas recentes...</p>
                 </div>
             </div>
             <button class="fab-btn" onclick="openContactsModal()" type="button">💬</button>
@@ -224,16 +232,23 @@ HTML_TEMPLATE = """
 
         <div id="radio-view" class="view-section hidden">
             <div class="radio-container">
-                <div class="radio-disc" id="radio-disc"></div>
-                <h3 style="font-size: 18px; color: var(--accent-color); margin-bottom: 5px;">🎧 Deffine Web Rádio</h3>
-                <p id="radio-status-text" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">Toque para curtir o som</p>
-                
-                <div class="equalizer" id="equalizer">
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
+                <div class="cassette">
+                    <div class="cassette-label">DEFFINE WEB RÁDIO - STEREO</div>
+                    <div class="cassette-window">
+                        <div class="reel" id="reel-left"><div class="reel-center"></div></div>
+                        <div class="tape-bridge"></div>
+                        <div class="reel" id="reel-right"><div class="reel-center"></div></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-secondary);">
+                        <span>SIDE A</span>
+                        <span id="radio-status-text">PRONTO</span>
+                        <span>HI-FI</span>
+                    </div>
+                </div>
+
+                <div class="volume-control">
+                    <span>🔊 Vol</span>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1" oninput="changeVolume(this.value)">
                 </div>
 
                 <audio id="web-radio-audio" src="https://azuracast.deffine.com.br/listen/deffine_web_radio/radio.mp3"></audio>
@@ -276,10 +291,13 @@ HTML_TEMPLATE = """
         <div class="modal-content">
             <h2>⚙️ Painel GB Mods</h2>
             <div class="form-group">
-                <label>Tema</label>
+                <label>Tema e Cores</label>
                 <select id="theme-select">
-                    <option value="dark-oled">Preto OLED</option>
+                    <option value="dark-oled">Preto OLED (Padrão)</option>
                     <option value="light">Claro</option>
+                    <option value="lime-black">Verde Limão com Preto</option>
+                    <option value="yellow-black">Amarelo com Preto</option>
+                    <option value="blue-yellow">Azul com Amarelo</option>
                 </select>
             </div>
             <div class="form-group">
@@ -364,7 +382,7 @@ HTML_TEMPLATE = """
             const listContainer = document.getElementById('chat-list');
             listContainer.innerHTML = '';
             if (!chats || chats.length === 0) {
-                listContainer.innerHTML = '<div style="padding: 30px; text-align: center; color: var(--text-secondary);">Nenhum chat recente encontrado.</div>';
+                listContainer.innerHTML = '<div style="padding: 30px; text-align: center;"><p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">Nenhum chat recente. Carregando contatos...</p><button class="download-btn" onclick="loadFriends()" type="button">👥 Ver Contatos</button></div>';
                 return;
             }
             chats.forEach(chat => {
@@ -474,24 +492,29 @@ HTML_TEMPLATE = """
         function toggleRadio() {
             const audio = document.getElementById('web-radio-audio');
             const btn = document.getElementById('radio-toggle-btn');
-            const disc = document.getElementById('radio-disc');
-            const eq = document.getElementById('equalizer');
+            const reelLeft = document.getElementById('reel-left');
+            const reelRight = document.getElementById('reel-right');
             const statusTxt = document.getElementById('radio-status-text');
 
             if (audio.paused) {
                 audio.play().then(() => {
                     btn.innerText = '⏸️ PAUSAR RÁDIO';
-                    disc.classList.add('playing');
-                    eq.classList.add('playing-bars');
-                    statusTxt.innerText = 'Transmitindo ao vivo 🔴';
+                    reelLeft.classList.add('playing-reel');
+                    reelRight.classList.add('playing-reel');
+                    statusTxt.innerText = 'AO VIVO';
                 }).catch(e => alert('Erro ao reproduzir rádio: ' + e));
             } else {
                 audio.pause();
                 btn.innerText = '▶️ OUVIR RÁDIO';
-                disc.classList.remove('playing');
-                eq.classList.remove('playing-bars');
-                statusTxt.innerText = 'Rádio pausada';
+                reelLeft.classList.remove('playing-reel');
+                reelRight.classList.remove('playing-reel');
+                statusTxt.innerText = 'PAUSADO';
             }
+        }
+
+        function changeVolume(val) {
+            const audio = document.getElementById('web-radio-audio');
+            audio.volume = val;
         }
 
         function scheduleMessage() {
@@ -547,7 +570,7 @@ HTML_TEMPLATE = """
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(settings)
-            }).then(() => { closeMods(); alert('Salvo com sucesso!'); });
+            }).then(() => { closeMods(); location.reload(); });
         }
     </script>
 </body>
@@ -567,16 +590,24 @@ def get_profile():
     name = INSTANCE_NAME
     pic = ""
     try:
-        url = f"{EVOLUTION_URL}/instance/fetchInstances"
-        res = requests.get(url, headers=headers, timeout=5)
+        # Busca direta da foto de perfil na Evolution API
+        url = f"{EVOLUTION_URL}/chat/fetchProfilePictureUrl/{INSTANCE_NAME}"
+        payload = {"number": INSTANCE_NAME}
+        res = requests.post(url, json=payload, headers=headers, timeout=5)
         if res.status_code == 200:
-            instances = res.json()
-            for inst in instances:
-                if inst.get("name") == INSTANCE_NAME:
-                    profile = inst.get("profile") or {}
-                    name = profile.get("name") or INSTANCE_NAME
-                    pic = profile.get("profilePictureUrl") or profile.get("pictureUrl", "")
-                    break
+            data = res.json()
+            pic = data.get("profilePictureUrl") or data.get("pictureUrl") or ""
+        
+        if not pic:
+            url_inst = f"{EVOLUTION_URL}/instance/fetchInstances"
+            res_inst = requests.get(url_inst, headers=headers, timeout=5)
+            if res_inst.status_code == 200:
+                for inst in res_inst.json():
+                    if inst.get("name") == INSTANCE_NAME:
+                        profile = inst.get("profile") or {}
+                        name = profile.get("name") or INSTANCE_NAME
+                        pic = profile.get("profilePictureUrl") or profile.get("pictureUrl", "")
+                        break
     except Exception as e:
         print(f"Erro perfil: {e}")
     return {"name": name, "pic": pic}
@@ -600,6 +631,20 @@ def get_chats():
                 timestamp = last_message.get("messageTimestamp", 0)
                 time_str = datetime.fromtimestamp(int(timestamp)).strftime("%H:%M") if timestamp else ""
                 chats_dict[jid] = {"id": jid, "name": name, "last_msg": last_text, "pic": pic, "time": time_str}
+        
+        # Fallback caso os chats venham vazios, puxa os contatos para preencher a tela inicial
+        if not chats_dict:
+            url_cont = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
+            res_cont = requests.post(url_cont, json={}, headers=headers, timeout=5)
+            if res_cont.status_code == 200:
+                c_data = res_cont.json()
+                c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
+                for c in c_items[:15]:
+                    jid = c.get("id") or c.get("remoteJid", "")
+                    if not jid: continue
+                    name = c.get("name") or c.get("pushName") or jid.split("@")[0]
+                    pic = c.get("profilePictureUrl", "")
+                    chats_dict[jid] = {"id": jid, "name": name, "last_msg": "Toque para conversar", "pic": pic, "time": ""}
     except Exception as e:
         print(f"Erro chats: {e}")
     return {"chats": list(chats_dict.values()), "theme": gb_settings["theme"]}
