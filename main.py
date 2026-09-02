@@ -287,7 +287,6 @@ HTML_TEMPLATE = """
                 if (view === 'status') document.getElementById('status-view').classList.remove('hidden');
                 if (view === 'schedule') document.getElementById('schedule-view').classList.remove('hidden');
                 
-                // Altera apenas o título informativo mantendo o container seguro
                 const headerLeft = document.getElementById('header-left-content');
                 headerLeft.innerHTML = `<div class="status-info"><h3 style="font-size:16px;">${view === 'status' ? 'Status 📸' : 'Agendador ⏰'}</h3></div>`;
                 headerBtns.innerHTML = `<button class="back-btn" onclick="navigateTo('home')">⬅️ Voltar</button>`;
@@ -399,7 +398,6 @@ HTML_TEMPLATE = """
             currentChatName = name;
             let avatarHTML = pic ? `<img src="${pic}" alt="Avatar">` : name.substring(0,2).toUpperCase();
             
-            // Exibe temporariamente os dados da pessoa no chat aberto
             document.getElementById('header-left-content').innerHTML = `
                 <div class="avatar">${avatarHTML}</div>
                 <div class="status-info">
@@ -569,6 +567,28 @@ def get_chats():
                 })
     except Exception as e:
         print(f"Erro ao buscar chats: {e}")
+
+    # Fallback: Se a lista de chats recentes estiver vazia, preenche com os contatos
+    if not chats_list:
+        try:
+            url_contacts = f"{EVOLUTION_URL}/chat/findContacts/{INSTANCE_NAME}"
+            res_c = requests.post(url_contacts, json={}, headers=headers, timeout=5)
+            if res_c.status_code == 200:
+                c_data = res_c.json()
+                c_items = c_data if isinstance(c_data, list) else c_data.get("contacts", [])
+                for c in c_items:
+                    jid = c.get("id") or c.get("remoteJid", "")
+                    name = c.get("name") or c.get("pushName") or jid.split("@")[0]
+                    pic = c.get("profilePictureUrl", "")
+                    chats_list.append({
+                        "id": jid,
+                        "name": name,
+                        "last_msg": "Toque para conversar",
+                        "pic": pic,
+                        "time": ""
+                    })
+        except Exception as e:
+            print(f"Erro ao buscar fallback de contatos: {e}")
 
     return {
         "chats": chats_list,
